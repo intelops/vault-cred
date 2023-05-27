@@ -44,7 +44,7 @@ func Start() {
 	reflection.Register(grpcServer)
 	go func() {
 		if err := grpcServer.Serve(listener); err != nil {
-			log.Error("failed to start vaultserv", err)
+			log.Fatalf("failed to start vaultserv", err)
 		}
 	}()
 
