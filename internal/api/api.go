@@ -29,7 +29,8 @@ func getCredentialMountPath(credentialType, credEntityName string) string {
 	return fmt.Sprintf("%s/%s", credentialType, credEntityName)
 }
 
-func (v *VaultCredServ) GetCredRequest(ctx context.Context, request *vaultcredpb.GetCredRequest) (*vaultcredpb.GetCredResponse, error) {
+func (v *VaultCredServ) GetCred(ctx context.Context, request *vaultcredpb.GetCredRequest) (*vaultcredpb.GetCredResponse, error) {
+	fmt.Printf("here")
 	vc, err := client.NewVaultClientForServiceAccount(ctx, v.conf, request.VaultRole, request.ServiceAccountToken)
 	if err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func (v *VaultCredServ) GetCredRequest(ctx context.Context, request *vaultcredpb
 	return &vaultcredpb.GetCredResponse{Credentail: credentail}, nil
 }
 
-func (v *VaultCredServ) PutCredRequest(ctx context.Context, request *vaultcredpb.PutCredRequest) (*vaultcredpb.PutCredResponse, error) {
+func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCredRequest) (*vaultcredpb.PutCredResponse, error) {
 	vc, err := client.NewVaultClientForServiceAccount(ctx, v.conf, request.VaultRole, request.ServiceAccountToken)
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (v *VaultCredServ) PutCredRequest(ctx context.Context, request *vaultcredpb
 	return &vaultcredpb.PutCredResponse{}, nil
 }
 
-func (v *VaultCredServ) DeleteCredRequest(ctx context.Context, request *vaultcredpb.PutCredRequest) (*vaultcredpb.DeleteCredResponse, error) {
+func (v *VaultCredServ) DeleteCred(ctx context.Context, request *vaultcredpb.DeleteCredRequest) (*vaultcredpb.DeleteCredResponse, error) {
 	vc, err := client.NewVaultClientForServiceAccount(ctx, v.conf, request.VaultRole, request.ServiceAccountToken)
 	if err != nil {
 		return nil, err
