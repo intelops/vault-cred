@@ -103,8 +103,8 @@ func readFileContent(path string) (s string, err error) {
 	return
 }
 
-func (vc *VaultClient) GetCredential(ctx context.Context, secretPath string) (cred map[string]string, err error) {
-	secretValByPath, err := vc.c.KVv2(secretPath).Get(context.Background(), secretPath)
+func (vc *VaultClient) GetCredential(ctx context.Context, mountPath, secretPath string) (cred map[string]string, err error) {
+	secretValByPath, err := vc.c.KVv2(mountPath).Get(context.Background(), secretPath)
 	if err != nil {
 		err = errors.WithMessagef(err, "error in reading certificate data from %s", secretPath)
 		return
@@ -125,20 +125,20 @@ func (vc *VaultClient) GetCredential(ctx context.Context, secretPath string) (cr
 	return
 }
 
-func (vc *VaultClient) PutCredential(ctx context.Context, secretPath string, cred map[string]string) (err error) {
+func (vc *VaultClient) PutCredential(ctx context.Context, mountPath, secretPath string, cred map[string]string) (err error) {
 	credData := map[string]interface{}{}
 	for key, val := range cred {
 		credData[key] = val
 	}
-	_, err = vc.c.KVv2(secretPath).Put(ctx, secretPath, credData)
+	_, err = vc.c.KVv2(mountPath).Put(ctx, secretPath, credData)
 	if err != nil {
 		err = errors.WithMessagef(err, "error in putting credentail at %s", secretPath)
 	}
 	return
 }
 
-func (vc *VaultClient) DeleteCredential(ctx context.Context, secretPath string) (err error) {
-	err = vc.c.KVv2(secretPath).Delete(ctx, secretPath)
+func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPath string) (err error) {
+	err = vc.c.KVv2(mountPath).Delete(ctx, secretPath)
 	if err != nil {
 		err = errors.WithMessagef(err, "error in deleting credentail at %s", secretPath)
 	}

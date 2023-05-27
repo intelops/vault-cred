@@ -9,7 +9,7 @@ import (
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
-	"github.com/intelops/vault-cred/pkg/internal/api"
+	"github.com/intelops/vault-cred/internal/api"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
 	"google.golang.org/grpc"
 
