@@ -25,8 +25,8 @@ func NewVaultCredServ() (*VaultCredServ, error) {
 	}, nil
 }
 
-func getCredentialPath(credentialType, credEntityName, credIdentifier string) string {
-	return fmt.Sprintf("%s/%s/%s", credentialType, credEntityName, credIdentifier)
+func getCredentialMountPath(credentialType, credEntityName string) string {
+	return fmt.Sprintf("%s/%s", credentialType, credEntityName)
 }
 
 func (v *VaultCredServ) GetCredRequest(ctx context.Context, request *vaultcredpb.GetCredRequest) (*vaultcredpb.GetCredResponse, error) {
@@ -35,8 +35,8 @@ func (v *VaultCredServ) GetCredRequest(ctx context.Context, request *vaultcredpb
 		return nil, err
 	}
 
-	secretPath := getCredentialPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
-	credentail, err := vc.GetCredential(ctx, secretPath)
+	mountPath := getCredentialMountPath(request.CredentialType, request.CredEntityName)
+	credentail, err := vc.GetCredential(ctx, mountPath, request.CredIdentifier)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +49,8 @@ func (v *VaultCredServ) PutCredRequest(ctx context.Context, request *vaultcredpb
 		return nil, err
 	}
 
-	secretPath := getCredentialPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
-	err = vc.PutCredential(ctx, secretPath, request.Credentail)
+	mountPath := getCredentialMountPath(request.CredentialType, request.CredEntityName)
+	err = vc.PutCredential(ctx, mountPath, request.CredIdentifier, request.Credentail)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +63,8 @@ func (v *VaultCredServ) DeleteCredRequest(ctx context.Context, request *vaultcre
 		return nil, err
 	}
 
-	secretPath := getCredentialPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
-	err = vc.DeleteCredential(ctx, secretPath)
+	mountPath := getCredentialMountPath(request.CredentialType, request.CredEntityName)
+	err = vc.DeleteCredential(ctx, mountPath, request.CredIdentifier)
 	if err != nil {
 		return nil, err
 	}
