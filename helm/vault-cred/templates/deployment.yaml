@@ -36,6 +36,14 @@ spec:
           env:
             - name: VAULT_ADDR
               value: {{ .Values.env.vaultAddress }}
+            - name: VAULT_CACERT
+              value: {{ .Values.env.vaultCACertPath }}
+            - name: VAULT_TOKEN_PATH
+              value: {{ .Values.env.vaultTokenPath }}
+            - name: VAULT_READ_TIMEOUT
+              value: {{ .Values.env.vaultReadTimeout }}
+            - name: VAULT_MAX_RETRIES
+              value: {{ .Values.env.vaultMaxRetries }}
           ports:
             - name: http
               containerPort: 9098

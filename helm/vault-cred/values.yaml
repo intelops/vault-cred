@@ -42,6 +42,10 @@ service:
 
 env:
   vaultAddress: https://vault:8200
+  vaultCACertPath: /var/certs/ca.pem
+  vaultTokenPath: /var/token/vault
+  vaultReadTimeout: 60s
+  vaultMaxRetries: 5
 
 ingress:
   enabled: false
