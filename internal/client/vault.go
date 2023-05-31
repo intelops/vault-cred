@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/vault/api"
@@ -70,8 +71,10 @@ func prepareVaultConfig(conf config.VaultEnv) (cfg *api.Config, err error) {
 	cfg.Timeout = conf.ReadTimeout
 	cfg.Backoff = retryablehttp.DefaultBackoff
 	cfg.MaxRetries = conf.MaxRetries
-	tlsConfig := api.TLSConfig{CACert: conf.CACert}
-	err = cfg.ConfigureTLS(&tlsConfig)
+	if conf.CACert != "" {
+		tlsConfig := api.TLSConfig{CACert: conf.CACert}
+		err = cfg.ConfigureTLS(&tlsConfig)
+	}
 	return
 }
 
@@ -99,7 +102,7 @@ func readFileContent(path string) (s string, err error) {
 	if err != nil {
 		return
 	}
-	s = string(b)
+	s = strings.TrimSpace(string(b))
 	return
 }
 
