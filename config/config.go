@@ -13,7 +13,7 @@ type Configuration struct {
 
 type VaultEnv struct {
 	Address               string        `envconfig:"VAULT_ADDR" required:"true"`
-	CACert                string        `envconfig:"VAULT_CACERT" required:"true"`
+	CACert                string        `envconfig:"VAULT_CACERT" required:"false"`
 	ReadTimeout           time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
 	MaxRetries            int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
 	VaultTokenForRequests bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`

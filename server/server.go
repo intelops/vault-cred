@@ -20,7 +20,7 @@ func Start() {
 	log := logging.NewLogger()
 
 	log.Info("staring vaultcred server")
-	vaultCredServer, err := api.NewVaultCredServ()
+	vaultCredServer, err := api.NewVaultCredServ(log)
 	if err != nil {
 		log.Fatal("failed to start vaultserv", err)
 	}
