@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/intelops/vault-cred/internal/job"
 	"net"
 	"os"
 	"os/signal"
@@ -19,16 +20,28 @@ import (
 func Start() {
 	log := logging.NewLogger()
 
-	log.Info("staring vaultcred server")
+	log.Info("staring vault-cred server")
 	vaultCredServer, err := api.NewVaultCredServ(log)
 	if err != nil {
-		log.Fatal("failed to start vaultserv", err)
+		log.Fatal("failed to start vault-cred", err)
 	}
 
 	cfg, err := config.FetchConfiguration()
 	if err != nil {
 		log.Fatal("Fetching application configuration failed", err)
 	}
+
+	j, err := job.NewVaultSealWatcher(log, cfg.VaultSealWatchInterval)
+	if err != nil {
+		log.Fatal("failed to init job", err)
+	}
+
+	s := job.NewScheduler(log)
+	err = s.AddJob("vault-seal-watcher", j)
+	if err != nil {
+		log.Fatal("failed to add job", err)
+	}
+	s.Start()
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	listener, err := net.Listen("tcp", addr)
@@ -44,7 +57,7 @@ func Start() {
 	reflection.Register(grpcServer)
 	go func() {
 		if err := grpcServer.Serve(listener); err != nil {
-			log.Fatalf("failed to start vaultserv", err)
+			log.Fatalf("failed to start vault-cred", err)
 		}
 	}()
 
@@ -53,5 +66,5 @@ func Start() {
 	<-signals
 
 	grpcServer.Stop()
-	log.Debug("exiting vaultcred server")
+	log.Debug("exiting vault-cred server")
 }
