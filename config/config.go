@@ -7,8 +7,9 @@ import (
 )
 
 type Configuration struct {
-	Host string `envconfig:"HOST" default:"0.0.0.0"`
-	Port int    `envconfig:"PORT" default:"9098"`
+	Host                   string `envconfig:"HOST" default:"0.0.0.0"`
+	Port                   int    `envconfig:"PORT" default:"9098"`
+	VaultSealWatchInterval string `envconfig:"VAULT_SEAL_WATCH_INTERVAL" default:"@every 1m"`
 }
 
 type VaultEnv struct {
