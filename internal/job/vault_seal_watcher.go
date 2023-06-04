@@ -29,8 +29,14 @@ func (v *VaultSealWatcher) CronSpec() string {
 }
 
 func (v *VaultSealWatcher) Run() {
+	v.log.Info("started vault seal watcher")
 	_, err := client.NewVaultClientForVaultToken(v.conf)
 	if err != nil {
 		v.log.Errorf("%s", err)
 	}
+
+	// get vault status
+	// if status unsealed, then return
+
+	// if status sealed, then unseal
 }

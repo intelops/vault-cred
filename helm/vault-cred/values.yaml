@@ -40,13 +40,18 @@ service:
   type: ClusterIP
   port: 8080
 
-env:
+vault:
   vaultAddress: https://vault:8200
   vaultCACertPath: /var/certs/ca.pem
-  vaultTokenPath: /var/token/vault
+  vaultTokenPath: /etc/vault/root-token
+  vaultUnSealKeysPath: /etc/vault/
   vaultReadTimeout: 60s
   vaultMaxRetries: 5
-
+  secretName: vault-secret
+  vaultMountPath: /etc/vault
+  unSealKeyNames: unsealkey1,unsealkey2,unsealkey3
+  vaultSealWatchInterval: "@every 30s"
+  vaultPolicyWatchInterval: "@every 1m"
 ingress:
   enabled: false
   className: ""

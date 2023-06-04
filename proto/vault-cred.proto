@@ -25,7 +25,7 @@ message GetCredRequest {
 message GetCredResponse {
    //service-cred credential, for example: "userName": "iam-root", "password:: "hello"
    //client-cert credential, for example: "clientId": "intelops-user", "ca.crt": "...", "client.crt": "...", "client.key": "..."
-   map<string, string> credentail = 1;
+   map<string, string> credential = 1;
 }
 
 message PutCredRequest {
@@ -36,7 +36,7 @@ message PutCredRequest {
    string credIdentifier = 5;
    //service-cred credential, for example: "userName": "iam-root", "password:: "hello"
    //client-cert credential, for example: "clientId": "intelops-user", "ca.crt": "...", "client.crt": "...", "client.key": "..."
-   map<string, string> credentail = 6;
+   map<string, string> credential = 6;
 }
 
 message PutCredResponse {
