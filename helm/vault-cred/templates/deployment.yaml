@@ -39,23 +39,23 @@ spec:
               readOnly: true
           env:
             - name: VAULT_ADDR
-              value: {{ .Values.vault.vaultAddress }}
+              value: "{{ .Values.vault.vaultAddress }}"
             - name: VAULT_CACERT
-              value: {{ .Values.vault.vaultCACertPath }}
+              value: "{{ .Values.vault.vaultCACertPath }}"
             - name: VAULT_TOKEN_PATH
-              value: {{ .Values.vault.vaultTokenPath }}
+              value: "{{ .Values.vault.vaultTokenPath }}"
             - name: VAULT_UNSEAL_KEYS_PATH
-              value: { { .Values.vault.vaultUnSealKeysPath } }
+              value: "{{ .Values.vault.vaultUnSealKeysPath }}"
             - name: VAULT_UNSEAL_KEY_NAMES
-              value: { { .Values.vault.unSealKeyNames } }
+              value: "{{ .Values.vault.unSealKeyNames }}"
             - name: VAULT_READ_TIMEOUT
-              value: {{ .Values.vault.vaultReadTimeout }}
+              value: "{{ .Values.vault.vaultReadTimeout }}"
             - name: VAULT_MAX_RETRIES
-              value: {{ .Values.vault.vaultMaxRetries }}
+              value: "{{ .Values.vault.vaultMaxRetries }}"
             - name: VAULT_SEAL_WATCH_INTERVAL
-              value: { { .Values.vault.vaultSealWatchInterval } }
+              value: "{{ .Values.vault.vaultSealWatchInterval }}"
             - name: VAULT_POLICY_WATCH_INTERVAL
-              value: { { .Values.vault.vaultPolicyWatchInterval } }
+              value: "{{ .Values.vault.vaultPolicyWatchInterval }}"
           ports:
             - name: http
               containerPort: 9098
