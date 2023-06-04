@@ -45,7 +45,7 @@ vault:
   vaultCACertPath: /var/certs/ca.pem
   vaultTokenPath: /etc/vault/root-token
   vaultUnSealKeysPath: /etc/vault/
-  vaultReadTimeout: 60s
+  vaultReadTimeout: "60s"
   vaultMaxRetries: 5
   secretName: vault-secret
   vaultMountPath: /etc/vault
