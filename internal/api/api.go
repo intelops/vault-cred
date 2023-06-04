@@ -50,7 +50,7 @@ func (v *VaultCredServ) GetCred(ctx context.Context, request *vaultcredpb.GetCre
 	}
 
 	v.log.Infof("get credential request processed for %s", secretPath)
-	return &vaultcredpb.GetCredResponse{Credentail: credentail}, nil
+	return &vaultcredpb.GetCredResponse{Credential: credentail}, nil
 }
 
 func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCredRequest) (*vaultcredpb.PutCredResponse, error) {
@@ -60,7 +60,7 @@ func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCre
 	}
 
 	secretPath := prepareCredentialSecretPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
-	err = vc.PutCredential(ctx, credentialMountPath(), secretPath, request.Credentail)
+	err = vc.PutCredential(ctx, credentialMountPath(), secretPath, request.Credential)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to write credential")
 	}

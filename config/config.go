@@ -7,9 +7,10 @@ import (
 )
 
 type Configuration struct {
-	Host                   string `envconfig:"HOST" default:"0.0.0.0"`
-	Port                   int    `envconfig:"PORT" default:"9098"`
-	VaultSealWatchInterval string `envconfig:"VAULT_SEAL_WATCH_INTERVAL" default:"@every 1m"`
+	Host                     string `envconfig:"HOST" default:"0.0.0.0"`
+	Port                     int    `envconfig:"PORT" default:"9098"`
+	VaultSealWatchInterval   string `envconfig:"VAULT_SEAL_WATCH_INTERVAL"`
+	VaultPolicyWatchInterval string `envconfig:"VAULT_POLICY_WATCH_INTERVAL"`
 }
 
 type VaultEnv struct {
@@ -19,6 +20,8 @@ type VaultEnv struct {
 	MaxRetries            int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
 	VaultTokenForRequests bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
 	VaultTokenPath        string        `envconfig:"VAULT_TOKEN_PATH"`
+	VaultUnSealKeyPath    string        `envconfig:"VAULT_UNSEAL_PATH"`
+	VaultUnSealKeyNames   []string      `envconfig:"VAULT_UNSEAL_KEY_NAMES" default:"unsealkey1,unsealkey2,unsealkey3"`
 }
 
 func FetchConfiguration() (Configuration, error) {

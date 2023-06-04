@@ -31,18 +31,6 @@ func Start() {
 		log.Fatal("Fetching application configuration failed", err)
 	}
 
-	j, err := job.NewVaultSealWatcher(log, cfg.VaultSealWatchInterval)
-	if err != nil {
-		log.Fatal("failed to init job", err)
-	}
-
-	s := job.NewScheduler(log)
-	err = s.AddJob("vault-seal-watcher", j)
-	if err != nil {
-		log.Fatal("failed to add job", err)
-	}
-	s.Start()
-
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -61,10 +49,41 @@ func Start() {
 		}
 	}()
 
+	s := initScheduler(log, cfg)
+	s.Start()
+
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	<-signals
 
+	s.Stop()
 	grpcServer.Stop()
 	log.Debug("exiting vault-cred server")
+}
+
+func initScheduler(log logging.Logger, cfg config.Configuration) (s *job.Scheduler) {
+	s = job.NewScheduler(log)
+	if cfg.VaultSealWatchInterval != "" {
+		sj, err := job.NewVaultSealWatcher(log, cfg.VaultSealWatchInterval)
+		if err != nil {
+			log.Fatal("failed to init seal watcher job", err)
+		}
+		err = s.AddJob("vault-seal-watcher", sj)
+		if err != nil {
+			log.Fatal("failed to add seal watcher job", err)
+		}
+	}
+
+	if cfg.VaultPolicyWatchInterval != "" {
+		pj, err := job.NewVaultPolicyWatcher(log, cfg.VaultPolicyWatchInterval)
+		if err != nil {
+			log.Fatal("failed to init policy watcher job", err)
+		}
+
+		err = s.AddJob("vault-policy-watcher", pj)
+		if err != nil {
+			log.Fatal("failed to add policy watcher job", err)
+		}
+	}
+	return
 }
