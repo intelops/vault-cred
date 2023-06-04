@@ -64,4 +64,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           args: |
-            --build-arg GITHUB_TOKEN=${TOKEN}
+            --build-arg GITHUB_TOKEN=${{ secrets.TOKEN }}
