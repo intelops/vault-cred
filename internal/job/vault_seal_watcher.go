@@ -1,6 +1,8 @@
 package job
 
 import (
+	"log"
+
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/client"
@@ -33,4 +35,15 @@ func (v *VaultSealWatcher) Run() {
 	if err != nil {
 		v.log.Errorf("%s", err)
 	}
+	res,_:=client.VaultClient{}.IsVaultSealed()
+	  // get vault status
+       // if status unsealed, then return
+	   if res{
+           err:=client.VaultClient{}.Unseal()
+		   if err!=nil {
+			log.Fatal("Error while unsealing",err)
+		   }
+	   }
+
+      // if status sealed, then unseal
 }

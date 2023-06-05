@@ -43,10 +43,13 @@ service:
 env:
   vaultAddress: https://vault:8200
   vaultCACertPath: /var/certs/ca.pem
-  vaultTokenPath: /var/token/vault
   vaultReadTimeout: 60s
   vaultMaxRetries: 5
-
+  vaultTokenPath: /etc/vault/root-token
+  vaultUnSealKeysPath: /etc/vault/unseal
+vault:
+  secretName: vault-secret
+  vaultMountPath: /etc/vault
 ingress:
   enabled: false
   className: ""

@@ -33,6 +33,12 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: vault-secret
+              mountPath: {{ .Values.vault.vaultMountPath }}
+              readOnly: true
+          
+             
           env:
             - name: VAULT_ADDR
               value: {{ .Values.env.vaultAddress }}
@@ -44,13 +50,22 @@ spec:
               value: {{ .Values.env.vaultReadTimeout }}
             - name: VAULT_MAX_RETRIES
               value: {{ .Values.env.vaultMaxRetries }}
+            - name: VAULT_ADDR
+              value: {{ .Values.env.vaultAddress }}
+              
           ports:
             - name: http
               containerPort: 9098
               protocol: TCP
+          
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
+      volumes:
+        - name: vault-secret
+          secret:
+            secretName: {{ .Values.vault.secretName }}
+      
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -19,6 +19,8 @@ type VaultEnv struct {
 	MaxRetries            int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
 	VaultTokenForRequests bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
 	VaultTokenPath        string        `envconfig:"VAULT_TOKEN_PATH"`
+	VaultUnSealKeyPath    string        `envconfig:"VAULT_UNSEAL_PATH"`
+	VaultUnSealKeyNames   []string      `envconfig:"VAULT_UNSEAL_KEY_NAMES" default:"unsealkey1,unsealkey2,unsealkey3"`
 }
 
 func FetchConfiguration() (Configuration, error) {
