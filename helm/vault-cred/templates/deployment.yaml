@@ -37,6 +37,8 @@ spec:
             - name: vault-secret
               mountPath: {{ .Values.vault.vaultMountPath }}
               readOnly: true
+          
+             
           env:
             - name: VAULT_ADDR
               value: "{{ .Values.vault.vaultAddress }}"
@@ -51,15 +53,15 @@ spec:
             - name: VAULT_READ_TIMEOUT
               value: "{{ .Values.vault.vaultReadTimeout }}"
             - name: VAULT_MAX_RETRIES
-              value: "{{ .Values.vault.vaultMaxRetries }}"
-            - name: VAULT_SEAL_WATCH_INTERVAL
-              value: "{{ .Values.vault.vaultSealWatchInterval }}"
-            - name: VAULT_POLICY_WATCH_INTERVAL
-              value: "{{ .Values.vault.vaultPolicyWatchInterval }}"
+              value: {{ .Values.env.vaultMaxRetries }}
+            - name: VAULT_ADDR
+              value: {{ .Values.env.vaultAddress }}
+              
           ports:
             - name: http
               containerPort: 9098
               protocol: TCP
+          
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -67,6 +69,11 @@ spec:
           secret:
             secretName: {{ .Values.vault.secretName }}
       {{- with .Values.nodeSelector }}
+      volumes:
+        - name: vault-secret
+          secret:
+            secretName: {{ .Values.vault.secretName }}
+      
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
