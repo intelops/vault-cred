@@ -3,13 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 
-	//	"time"
-
-	//"time"
-
-	//	"time"
+	"github.com/intelops/vault-cred/config"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -105,122 +102,28 @@ func (v VaultClient) Storekeys(nameSpace string, SecretName string) []string {
 	return values
 }
 
-func (v *VaultClient) MountSecrets(unsealKeys []string, rootTokens []string) error {
-	// Initialize and configure your Vault client
+//
 
-	// Authenticate with Vault using the root token
-	if len(rootTokens) == 0 {
-		return fmt.Errorf("root token not provided")
+func readUnsealKeysFromPath(path string) ([]string, error) {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, err
 	}
 
-	v.c.SetToken(rootTokens[0]) // Use the first root token in the list, adjust if necessary
+	keys := make([]string, 0, len(files))
 
-	// Mount the unseal key and root token in the desired Vault path
-
-	for _, key := range unsealKeys {
-		_, err := v.c.Logical().Write("/etc/vault/unsealvault", map[string]interface{}{
-			"value": key,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to mount unseal key in Vault: %v", err)
+	for _, file := range files {
+		if !file.IsDir() {
+			keyPath := filepath.Join(path, file.Name())
+			key, err := readFileContent(keyPath)
+			if err != nil {
+				return nil, errors.WithMessage(err, "error in reading unseal key file: "+file.Name())
+			}
+			keys = append(keys, key)
 		}
 	}
 
-	for _, token := range rootTokens {
-		_, err := v.c.Logical().Write("/etc/vault/root-token", map[string]interface{}{
-			"value": token,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to mount root token in Vault: %v", err)
-		}
-	}
-
-	return nil
-}
-func (v *VaultClient) RetrieveKeys(nameSpace string, SecretName string) ([]string, []string, error) {
-
-	var values []string
-	var rootToken []string
-	clientset := Config()
-	namespace := nameSpace // Namespace where you want to create the Secret
-	secretName := SecretName
-
-	secret2, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err != nil {
-		fmt.Println("Error while getting secret", err)
-	}
-
-	for key, value := range secret2.Data {
-
-		if key == "roottoken" {
-			rootToken = append(rootToken, string(value))
-
-			continue // Skip the last element
-		}
-
-		//fmt.Printf("Retrieved value for  %s: %s\n", key, value)
-		keys := string(value)
-		values = append(values, keys)
-		//	fmt.Println("Key is ", keys)
-
-	}
-
-	if (secret2.Name != "") && (secret2.Namespace != "") {
-		fmt.Printf("Secret '%s' found in namespace '%s'\n", secret2.Name, secret2.Namespace)
-	} else {
-		log.Fatal("Given Namespace and Secret Name not found")
-	}
-	// Use the secret as needed
-	for _, key := range rootToken {
-		fmt.Println("Root Token", key)
-	}
-	// Mount the unseal key and root token to the Vault path
-	err = v.MountSecrets(values, rootToken) // Replace with the actual function to mount the secrets in Vault
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to mount secrets to Vault: %v", err)
-
-	}
-	unsealkeys, root_token, err := v.ReadSecrets()
-	if err != nil {
-		log.Fatalf("Error while reading secrets from vault  %v", err)
-	}
-
-	return unsealkeys, root_token, nil
-}
-
-func (v *VaultClient) ReadSecrets() ([]string, []string, error) {
-	var unsealKeys []string
-	var rootTokens []string
-
-	// Read the unseal key from Vault
-	unsealSecret, err := v.c.Logical().Read("/etc/vault/unsealvault")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read unseal key from Vault: %v", err)
-	}
-
-	if unsealSecret != nil {
-		key, ok := unsealSecret.Data["value"]
-		if !ok {
-			return nil, nil, fmt.Errorf("unseal key not found in Vault response")
-		}
-		unsealKeys = append(unsealKeys, fmt.Sprintf("%s", key))
-	}
-
-	// Read the root token from Vault
-	rootTokenSecret, err := v.c.Logical().Read("/etc/vault/root-token")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read root token from Vault: %v", err)
-	}
-
-	if rootTokenSecret != nil {
-		token, ok := rootTokenSecret.Data["value"]
-		if !ok {
-			return nil, nil, fmt.Errorf("root token not found in Vault response")
-		}
-		rootTokens = append(rootTokens, fmt.Sprintf("%s", token))
-	}
-
-	return unsealKeys, rootTokens, nil
+	return keys, nil
 }
 
 func (v VaultClient) IsVaultSealed() (bool, error) {
@@ -249,7 +152,7 @@ func (v VaultClient) Unseal() error {
 	if err != nil {
 		return errors.WithMessage(err, "error in reading token file")
 	}
-	keys, _, err := v.ReadSecrets()
+	keys, err := readUnsealKeysFromPath(config.VaultEnv{}.VaultUnSealKeyPath)
 	if err != nil {
 		return fmt.Errorf("error while retrieving keys %v", err)
 	}
