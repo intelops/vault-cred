@@ -1,8 +1,6 @@
 package job
 
 import (
-	"log"
-
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/client"
@@ -31,25 +29,28 @@ func (v *VaultSealWatcher) CronSpec() string {
 }
 
 func (v *VaultSealWatcher) Run() {
-	v.log.Info("started vault seal watcher")
-	_, err := client.NewVaultClientForVaultToken(v.conf)
+	v.log.Debug("started vault seal watcher job")
+	vc, err := client.NewVaultClientForVaultToken(v.log, v.conf)
 	if err != nil {
 		v.log.Errorf("%s", err)
+		return
 	}
 
-	// get vault status
-	// if status unsealed, then return
+	res, err := vc.IsVaultSealed()
+	if err != nil {
+		v.log.Errorf("failed to get vault seal status, %s", err)
+		return
+	}
 
-	// if status sealed, then unseal
-	res, _ := client.VaultClient{}.IsVaultSealed()
-	// get vault status
-	// if status unsealed, then return
 	if res {
-		err := client.VaultClient{}.Unseal()
+		v.log.Info("vault is sealed, trying to unseal")
+		err := vc.Unseal()
 		if err != nil {
-			log.Fatal("Error while unsealing", err)
+			v.log.Errorf("failed to unseal vault, %s", err)
+			return
 		}
+		v.log.Info("vault unsealed")
+		return
 	}
-
-	// if status sealed, then unseal
+	v.log.Debug("vault is in unsealed status")
 }

@@ -29,7 +29,7 @@ func (v *ServicePolicyWatcher) CronSpec() string {
 }
 
 func (v *ServicePolicyWatcher) Run() {
-	_, err := client.NewVaultClientForVaultToken(v.conf)
+	_, err := client.NewVaultClientForVaultToken(v.log, v.conf)
 	if err != nil {
 		v.log.Errorf("%s", err)
 	}
