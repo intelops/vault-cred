@@ -8,20 +8,23 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/vault/api"
 	vaultauth "github.com/hashicorp/vault/api/auth/kubernetes"
+	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/pkg/errors"
 )
 
 type VaultClient struct {
-	c *api.Client
+	c    *api.Client
+	conf config.VaultEnv
+	log  logging.Logger
 }
 
-func NewVaultClientForServiceAccount(ctx context.Context, conf config.VaultEnv, vaultRole, saToken string) (c *VaultClient, err error) {
+func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv, vaultRole, saToken string) (c *VaultClient, err error) {
 	if conf.VaultTokenForRequests {
-		return NewVaultClientForVaultToken(conf)
+		return NewVaultClientForVaultToken(log, conf)
 	}
 
-	vc, err := newVaultClient(conf)
+	vc, err := newVaultClient(log, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +36,8 @@ func NewVaultClientForServiceAccount(ctx context.Context, conf config.VaultEnv, 
 	return vc, nil
 }
 
-func NewVaultClientForVaultToken(conf config.VaultEnv) (*VaultClient, error) {
-	vc, err := newVaultClient(conf)
+func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
+	vc, err := newVaultClient(log, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +52,7 @@ func NewVaultClientForVaultToken(conf config.VaultEnv) (*VaultClient, error) {
 	return nil, errors.New("vault token path not found")
 }
 
-func newVaultClient(conf config.VaultEnv) (*VaultClient, error) {
+func newVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	cfg, err := prepareVaultConfig(conf)
 	if err != nil {
 		return nil, err
@@ -61,7 +64,9 @@ func newVaultClient(conf config.VaultEnv) (*VaultClient, error) {
 	}
 
 	return &VaultClient{
-		c: c,
+		c:    c,
+		conf: conf,
+		log:  log,
 	}, nil
 }
 
