@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/intelops/vault-cred/internal/job"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/intelops/vault-cred/internal/job"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
@@ -65,6 +66,7 @@ func initScheduler(log logging.Logger, cfg config.Configuration) (s *job.Schedul
 	s = job.NewScheduler(log)
 	if cfg.VaultSealWatchInterval != "" {
 		sj, err := job.NewVaultSealWatcher(log, cfg.VaultSealWatchInterval)
+		fmt.Println("JOb is", sj)
 		if err != nil {
 			log.Fatal("failed to init seal watcher job", err)
 		}

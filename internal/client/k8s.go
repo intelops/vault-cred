@@ -14,8 +14,8 @@ import (
 )
 
 type K8SClient struct {
-	c   *kubernetes.Clientset
-	log logging.Logger
+	Client *kubernetes.Clientset
+	log    logging.Logger
 }
 
 func NewK8SClient(log logging.Logger) (*K8SClient, error) {
@@ -32,7 +32,7 @@ func NewK8SClient(log logging.Logger) (*K8SClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &K8SClient{c: clientset, log: log}, nil
+	return &K8SClient{Client: clientset, log: log}, nil
 }
 
 func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namespace string, data map[string]string) error {
@@ -44,7 +44,7 @@ func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namesp
 		StringData: data,
 	}
 
-	createdSecret, err := k.c.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
+	createdSecret, err := k.Client.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
 	if err != nil {
 		return errors.WithMessage(err, "error in creating vault secret")
 	}
@@ -54,7 +54,7 @@ func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namesp
 }
 
 func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string) (map[string]string, error) {
-	secData, err := k.c.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	secData, err := k.Client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.WithMessage(err, "error in creating vault secret")
 	}

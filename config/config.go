@@ -19,11 +19,11 @@ type VaultEnv struct {
 	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
 	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
 	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
-	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-secret"`
+	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-server"`
 	VaultSecretNameSpace       string        `envconfig:"VAULT_SECRET_NAMESPACE" default:"default"`
 	VaultTokenPath             string        `envconfig:"VAULT_TOKEN_PATH"`
 	VaultUnSealKeyPath         string        `envconfig:"VAULT_UNSEAL_PATH"`
-	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"vault-secret"`
+	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"root-token"`
 	VaultSecretUnSealKeyPrefix string        `envconfig:"VAULT_SECRET_UNSEAL_KEY_PREFIX" default:"unsealkey"`
 }
 
