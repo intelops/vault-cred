@@ -15,11 +15,9 @@ service VaultCred {
 }
 
 message GetCredRequest {
-   string serviceAccountToken = 1;
-   string vaultRole = 2;
-   string credentialType = 3;
-   string credEntityName = 4;
-   string credIdentifier = 5;   
+   string credentialType = 1;
+   string credEntityName = 2;
+   string credIdentifier = 3;
 }
 
 message GetCredResponse {
@@ -29,11 +27,9 @@ message GetCredResponse {
 }
 
 message PutCredRequest {
-   string serviceAccountToken = 1;
-   string vaultRole = 2;
-   string credentialType = 3;
-   string credEntityName = 4;
-   string credIdentifier = 5;
+   string credentialType = 1;
+   string credEntityName = 2;
+   string credIdentifier = 3;
    //service-cred credential, for example: "userName": "iam-root", "password:: "hello"
    //client-cert credential, for example: "clientId": "intelops-user", "ca.crt": "...", "client.crt": "...", "client.key": "..."
    map<string, string> credential = 6;
@@ -43,11 +39,9 @@ message PutCredResponse {
 }
 
 message DeleteCredRequest {
-   string serviceAccountToken = 1;
-   string vaultRole = 2;
-   string credentialType = 3;
-   string credEntityName = 4;
-   string credIdentifier = 5;   
+   string credentialType = 1;
+   string credEntityName = 2;
+   string credIdentifier = 3;
 }
 
 message DeleteCredResponse {

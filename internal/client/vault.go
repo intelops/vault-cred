@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"strings"
 
@@ -11,6 +12,12 @@ import (
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc/metadata"
+)
+
+const (
+	vaultRoleKey    string = "vault-role"
+	serviceTokenKey string = "service-token"
 )
 
 type VaultClient struct {
@@ -19,7 +26,7 @@ type VaultClient struct {
 	log  logging.Logger
 }
 
-func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv, vaultRole, saToken string) (c *VaultClient, err error) {
+func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv) (c *VaultClient, err error) {
 	if conf.VaultTokenForRequests {
 		return NewVaultClientForVaultToken(log, conf)
 	}
@@ -29,7 +36,7 @@ func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, co
 		return nil, err
 	}
 
-	err = configureAuthToken(ctx, vc.c, vaultRole, saToken)
+	err = vc.configureAuthToken(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -93,16 +100,31 @@ func prepareVaultConfig(conf config.VaultEnv) (cfg *api.Config, err error) {
 	return
 }
 
-func configureAuthToken(ctx context.Context, vc *api.Client, vaultRole, saToken string) (err error) {
+func (vc *VaultClient) configureAuthToken(ctx context.Context) (err error) {
+	metadata, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return errors.WithMessagef(err, "vault auth context is missing")
+	}
+	roleData := metadata[vaultRoleKey]
+	tokenData := metadata[serviceTokenKey]
+	if !(len(roleData) == 1 && len(tokenData) == 1) {
+		return errors.WithMessagef(err, "vault auth context is missing")
+	}
+
+	serviceToken, err := base64.StdEncoding.DecodeString(tokenData[0])
+	if !ok {
+		return errors.WithMessagef(err, "vault auth context decoding error")
+	}
+
 	k8sAuth, err := vaultauth.NewKubernetesAuth(
-		vaultRole,
-		vaultauth.WithServiceAccountToken(saToken),
+		roleData[0],
+		vaultauth.WithServiceAccountToken(string(serviceToken)),
 	)
 	if err != nil {
 		return errors.WithMessagef(err, "error in initializing Kubernetes auth method")
 	}
 
-	authInfo, err := vc.Auth().Login(ctx, k8sAuth)
+	authInfo, err := vc.c.Auth().Login(ctx, k8sAuth)
 	if err != nil {
 		return errors.WithMessagef(err, "error in login with Kubernetes auth")
 	}
