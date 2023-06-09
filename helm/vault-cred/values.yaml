@@ -42,14 +42,15 @@ service:
 
 vault:
   vaultAddress: https://vault:8200
-  vaultCACertPath: /var/certs/ca.pem
-  vaultReadTimeout: 60s
+  secretName: vault-server
+  secretNamespace: default
+  secretTokenKeyName: roottoken
+  secretUnSealKeyPrefix: unsealkey
+  vaultReadTimeout: "60s"
   vaultMaxRetries: 5
-  vaultTokenPath: /etc/vault/root-token
-  vaultUnSealKeysPath: /etc/vault/unseal
-vault:
-  secretName: vault-secret
-  vaultMountPath: /etc/vault
+  vaultSealWatchInterval: "@every 30s"
+  vaultPolicyWatchInterval: "@every 1m"
+
 ingress:
   enabled: false
   className: ""

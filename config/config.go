@@ -14,16 +14,17 @@ type Configuration struct {
 }
 
 type VaultEnv struct {
-	Address               string        `envconfig:"VAULT_ADDR" required:"true"`
-	CACert                string        `envconfig:"VAULT_CACERT" required:"false"`
-	ReadTimeout           time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
-	MaxRetries            int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
-	VaultTokenForRequests bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
-	VaultSecretName       string        `envconfig:"VAULT_SECRET_NAME" default:"vault-secret"`
-	VaultSecretNameSpace  string        `envconfig:"VAULT_SECRET_NAMESPACE" default:"default"`
-	VaultTokenPath        string        `envconfig:"VAULT_TOKEN_PATH"`
-	VaultUnSealKeyPath    string        `envconfig:"VAULT_UNSEAL_PATH"`
-	VaultUnSealKeyNames   []string      `envconfig:"VAULT_UNSEAL_KEY_NAMES" default:"unsealkey1,unsealkey2,unsealkey3"`
+	Address                    string        `envconfig:"VAULT_ADDR" required:"true"`
+	CACert                     string        `envconfig:"VAULT_CACERT" required:"false"`
+	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
+	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
+	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
+	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-secret"`
+	VaultSecretNameSpace       string        `envconfig:"VAULT_SECRET_NAMESPACE" default:"default"`
+	VaultTokenPath             string        `envconfig:"VAULT_TOKEN_PATH"`
+	VaultUnSealKeyPath         string        `envconfig:"VAULT_UNSEAL_PATH"`
+	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"vault-secret"`
+	VaultSecretUnSealKeyPrefix string        `envconfig:"VAULT_SECRET_UNSEAL_KEY_PREFIX" default:"unsealkey"`
 }
 
 func FetchConfiguration() (Configuration, error) {
