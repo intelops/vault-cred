@@ -33,35 +33,29 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-            - name: vault-secret
-              mountPath: {{ .Values.vault.vaultMountPath }}
-              readOnly: true
-          
-             
           env:
             - name: VAULT_ADDR
               value: "{{ .Values.vault.vaultAddress }}"
-            - name: VAULT_CACERT
-              value: "{{ .Values.vault.vaultCACertPath }}"
-            - name: VAULT_TOKEN_PATH
-              value: "{{ .Values.vault.vaultTokenPath }}"
-            - name: VAULT_UNSEAL_KEYS_PATH
-              value: "{{ .Values.vault.vaultUnSealKeysPath }}"
-            - name: VAULT_UNSEAL_KEY_NAMES
-              value: "{{ .Values.vault.unSealKeyNames }}"
+            - name: VAULT_SECRET_NAME
+              value: "{{ .Values.vault.secretName }}"
+            - name: VAULT_SECRET_NAMESPACE
+              value: "{{ .Values.vault.secretNamespace }}"
+            - name: VAULT_SECRET_TOKEN_KEY_NAME
+              value: "{{ .Values.vault.secretTokenKeyName }}"
+            - name: VAULT_SECRET_UNSEAL_KEY_PREFIX
+              value: "{{ .Values.vault.secretUnSealKeyPrefix }}"
             - name: VAULT_READ_TIMEOUT
               value: "{{ .Values.vault.vaultReadTimeout }}"
             - name: VAULT_MAX_RETRIES
-              value: {{ .Values.env.vaultMaxRetries }}
-            - name: VAULT_ADDR
-              value: {{ .Values.env.vaultAddress }}
-              
+              value: "{{ .Values.vault.vaultMaxRetries }}"
+            - name: VAULT_SEAL_WATCH_INTERVAL
+              value: "{{ .Values.vault.vaultSealWatchInterval }}"
+            - name: VAULT_POLICY_WATCH_INTERVAL
+              value: "{{ .Values.vault.vaultPolicyWatchInterval }}"               
           ports:
             - name: http
               containerPort: 9098
               protocol: TCP
-          
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -69,11 +63,6 @@ spec:
           secret:
             secretName: {{ .Values.vault.secretName }}
       {{- with .Values.nodeSelector }}
-      volumes:
-        - name: vault-secret
-          secret:
-            secretName: {{ .Values.vault.secretName }}
-      
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}

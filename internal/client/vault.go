@@ -49,7 +49,17 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 		vc.c.SetToken(token)
 		return vc, nil
 	}
-	return nil, errors.New("vault token path not found")
+
+	k8s, err := NewK8SClient(vc.log)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error initializing k8s client")
+	}
+	vaultSec, err := k8s.GetSecret(context.Background(), vc.conf.VaultSecretName, vc.conf.VaultSecretNameSpace)
+	if err != nil {
+		return nil, errors.WithMessage(err, "error creating vault secret")
+	}
+	vc.c.SetToken(vaultSec[vc.conf.VaultSecretTokenKeyName])
+	return vc, nil
 }
 
 func newVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
