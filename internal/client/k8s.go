@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
@@ -14,7 +15,7 @@ import (
 )
 
 type K8SClient struct {
-	Client *kubernetes.Clientset
+	client *kubernetes.Clientset
 	log    logging.Logger
 }
 
@@ -32,7 +33,7 @@ func NewK8SClient(log logging.Logger) (*K8SClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &K8SClient{Client: clientset, log: log}, nil
+	return &K8SClient{client: clientset, log: log}, nil
 }
 
 func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namespace string, data map[string]string) error {
@@ -44,7 +45,7 @@ func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namesp
 		StringData: data,
 	}
 
-	createdSecret, err := k.Client.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
+	createdSecret, err := k.client.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
 	if err != nil {
 		return errors.WithMessage(err, "error in creating vault secret")
 	}
@@ -54,11 +55,36 @@ func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namesp
 }
 
 func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string) (map[string]string, error) {
-	secData, err := k.Client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	secData, err := k.client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.WithMessage(err, "error in creating vault secret")
 	}
 
 	k.log.Debugf("Secret %s fetached from namespace %s", secretName, namespace)
 	return secData.DeepCopy().StringData, nil
+}
+
+func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (map[string]map[string]string, error) {
+	configMaps := []corev1.ConfigMap{}
+	namespaces, err := k.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.WithMessage(err, "failed to list namespaces: %v")
+	}
+
+	for _, ns := range namespaces.Items {
+		cmList, err := k.client.CoreV1().ConfigMaps(ns.Name).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, errors.WithMessagef(err, "failed to list ConfigMaps in namespace %s", ns.Name)
+		}
+		configMaps = append(configMaps, cmList.Items...)
+	}
+
+	allConfigMapData := map[string]map[string]string{}
+	for _, cm := range configMaps {
+		if strings.HasPrefix(cm.Name, "vault-policy") {
+			cmKey := cm.Namespace + ":" + cm.Name
+			allConfigMapData[cmKey] = cm.Data
+		}
+	}
+	return allConfigMapData, nil
 }

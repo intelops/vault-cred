@@ -21,12 +21,12 @@ const (
 )
 
 type VaultClient struct {
-	C    *api.Client
+	c    *api.Client
 	conf config.VaultEnv
 	log  logging.Logger
 }
 
-func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv) (C *VaultClient, err error) {
+func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	if conf.VaultTokenForRequests {
 		return NewVaultClientForVaultToken(log, conf)
 	}
@@ -53,7 +53,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 		if err != nil {
 			return nil, errors.WithMessage(err, "error in reading token file")
 		}
-		vc.C.SetToken(token)
+		vc.c.SetToken(token)
 		return vc, nil
 	}
 
@@ -65,7 +65,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 	if err != nil {
 		return nil, errors.WithMessage(err, "error creating vault secret")
 	}
-	vc.C.SetToken(vaultSec[vc.conf.VaultSecretTokenKeyName])
+	vc.c.SetToken(vaultSec[vc.conf.VaultSecretTokenKeyName])
 	return vc, nil
 }
 
@@ -75,13 +75,13 @@ func newVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, err
 		return nil, err
 	}
 
-	C, err := api.NewClient(cfg)
+	c, err := api.NewClient(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &VaultClient{
-		C:    C,
+		c:    c,
 		conf: conf,
 		log:  log,
 	}, nil
@@ -124,7 +124,7 @@ func (vc *VaultClient) configureAuthToken(ctx context.Context) (err error) {
 		return errors.WithMessagef(err, "error in initializing Kubernetes auth method")
 	}
 
-	authInfo, err := vc.C.Auth().Login(ctx, k8sAuth)
+	authInfo, err := vc.c.Auth().Login(ctx, k8sAuth)
 	if err != nil {
 		return errors.WithMessagef(err, "error in login with Kubernetes auth")
 	}
@@ -144,7 +144,7 @@ func readFileContent(path string) (s string, err error) {
 }
 
 func (vc *VaultClient) GetCredential(ctx context.Context, mountPath, secretPath string) (cred map[string]string, err error) {
-	secretValByPath, err := vc.C.KVv2(mountPath).Get(context.Background(), secretPath)
+	secretValByPath, err := vc.c.KVv2(mountPath).Get(context.Background(), secretPath)
 	if err != nil {
 		err = errors.WithMessagef(err, "error in reading certificate data from %s", secretPath)
 		return
@@ -170,7 +170,7 @@ func (vc *VaultClient) PutCredential(ctx context.Context, mountPath, secretPath 
 	for key, val := range cred {
 		credData[key] = val
 	}
-	_, err = vc.C.KVv2(mountPath).Put(ctx, secretPath, credData)
+	_, err = vc.c.KVv2(mountPath).Put(ctx, secretPath, credData)
 	if err != nil {
 		err = errors.WithMessagef(err, "error in putting credentail at %s", secretPath)
 	}
@@ -178,7 +178,7 @@ func (vc *VaultClient) PutCredential(ctx context.Context, mountPath, secretPath 
 }
 
 func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPath string) (err error) {
-	err = vc.C.KVv2(mountPath).Delete(ctx, secretPath)
+	err = vc.c.KVv2(mountPath).Delete(ctx, secretPath)
 	if err != nil {
 		err = errors.WithMessagef(err, "error in deleting credentail at %s", secretPath)
 	}

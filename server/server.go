@@ -66,7 +66,6 @@ func initScheduler(log logging.Logger, cfg config.Configuration) (s *job.Schedul
 	s = job.NewScheduler(log)
 	if cfg.VaultSealWatchInterval != "" {
 		sj, err := job.NewVaultSealWatcher(log, cfg.VaultSealWatchInterval)
-		fmt.Println("JOb is", sj)
 		if err != nil {
 			log.Fatal("failed to init seal watcher job", err)
 		}

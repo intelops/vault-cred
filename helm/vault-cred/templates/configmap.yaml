@@ -1,0 +1,89 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-policy-service-cred-read
+  labels:
+    {{- include "vaultcred.labels" . | nindent 4 }}
+data:
+  policyName: "service-cred-read"
+  policyData: |
+        path "secret/service-cred/*" {
+          capabilities = ["read"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-policy-service-cred-admin
+  labels:
+    {{- include "vaultcred.labels" . | nindent 4 }}
+data:
+  policyName: "service-cred-admin"
+  policyData: |
+        path "secret/service-cred/*" {
+          capabilities = ["create","read","update","delete","list"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-policy-certs-read
+  labels:
+    {{- include "vaultcred.labels" . | nindent 4 }}
+data:
+  policyName: "certs-read"
+  policyData: |
+        path "secret/certs/*" {
+          capabilities = ["read"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-policy-certs-admin
+  labels:
+    {{- include "vaultcred.labels" . | nindent 4 }}
+data:
+  policyName: "certs-admin"
+  policyData: |
+        path "secret/certs/*" {
+          capabilities = ["create","read","update","delete","list"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-role-read-all-creds
+  labels:
+    {{- include "vaultcred.labels" . | nindent 4 }}
+data:
+  roleName: "vault-role-read-all"
+  policyNames: "service-cred-read,certs-read"
+  servieAccounts: "{{ include "vaultcred.serviceAccountName" . }}"
+  servieAccountNameSpaces: "{{ .Vaules.namespace }}"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-role-admin-all-creds
+  labels:
+    {{- include "vaultcred.labels" . | nindent 4 }}
+data:
+  roleName: "vault-role-admin-all"
+  policyNames: "service-cred-admin,certs-admin"
+  servieAccounts: "{{ include "vaultcred.serviceAccountName" . }}"
+  servieAccountNameSpaces: "{{ .Vaules.namespace }}"
+---

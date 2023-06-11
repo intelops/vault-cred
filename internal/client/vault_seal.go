@@ -13,7 +13,7 @@ import (
 )
 
 func (vc *VaultClient) IsVaultSealed() (bool, error) {
-	status, err := vc.C.Sys().SealStatus()
+	status, err := vc.c.Sys().SealStatus()
 	if err != nil {
 		return false, err
 	}
@@ -21,7 +21,7 @@ func (vc *VaultClient) IsVaultSealed() (bool, error) {
 }
 
 func (vc *VaultClient) Unseal() error {
-	status, err := vc.C.Sys().SealStatus()
+	status, err := vc.c.Sys().SealStatus()
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (vc *VaultClient) Unseal() error {
 	}
 
 	for _, key := range unsealKeys {
-		_, err := vc.C.Sys().Unseal(key)
+		_, err := vc.c.Sys().Unseal(key)
 		if err != nil {
 			return errors.WithMessage(err, "error while unsealing")
 		}
@@ -86,7 +86,7 @@ func (vc *VaultClient) generateUnsealKeys() ([]string, string, error) {
 	}
 
 	unsealKeys := []string{}
-	initRes, err := vc.C.Sys().Init(res)
+	initRes, err := vc.c.Sys().Init(res)
 	if err != nil {
 		return nil, "", err
 	}
