@@ -19,6 +19,18 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
     - ""
   resources:
     - pods
