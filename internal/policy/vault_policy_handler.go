@@ -11,12 +11,14 @@ import (
 )
 
 type VaultPolicyHandler struct {
-	log  logging.Logger
-	conf config.VaultEnv
+	log      logging.Logger
+	conf     config.VaultEnv
+	policies map[string]struct{}
 }
 
 func NewVaultPolicyHandler(log logging.Logger, conf config.VaultEnv) *VaultPolicyHandler {
-	return &VaultPolicyHandler{log: log, conf: conf}
+	return &VaultPolicyHandler{log: log, conf: conf,
+		policies: map[string]struct{}{}}
 }
 
 func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix string) (map[string]map[string]string, error) {
@@ -43,6 +45,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
 	}
 
+	p.policies = map[string]struct{}{}
 	for _, cmData := range allConfigMapData {
 		policyName := cmData["policyName"]
 		policyData := cmData["policyData"]
@@ -50,6 +53,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 		if err != nil {
 			return errors.WithMessagef(err, "error while creating vault policy %s, %v", policyName, cmData)
 		}
+		p.policies[policyName] = struct{}{}
 	}
 	return nil
 }
@@ -66,12 +70,26 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 	}
 
 	for _, cmData := range allConfigMapData {
-		roleName := cmData["policyNames"]
+		roleName := cmData["roleName"]
 		policyNames := cmData["policyNames"]
 		servieAccounts := cmData["servieAccounts"]
 		servieAccountNameSpaces := cmData["servieAccountNameSpaces"]
-		err = vc.CreateOrUpdateRole(roleName,
-			strings.Split(policyNames, ","),
+
+		policyNameList := strings.Split(policyNames, ",")
+		policiesExist := true
+		for _, policyName := range policyNameList {
+			if _, ok := p.policies[policyName]; !ok {
+				policiesExist = false
+				break
+			}
+		}
+
+		if !policiesExist {
+			p.log.Errorf("all polices are not exist to map to the role, %v", cmData)
+			continue
+		}
+
+		err = vc.CreateOrUpdateRole(roleName, policyNameList,
 			strings.Split(servieAccounts, ","),
 			strings.Split(servieAccountNameSpaces, ","))
 		if err != nil {
