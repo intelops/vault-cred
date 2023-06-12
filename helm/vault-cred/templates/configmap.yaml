@@ -73,7 +73,7 @@ data:
   roleName: "vault-role-read-all"
   policyNames: "service-cred-read,certs-read"
   servieAccounts: "{{ include "vaultcred.serviceAccountName" . }}"
-  servieAccountNameSpaces: "{{ .Vaules.namespace }}"
+  servieAccountNameSpaces: "{{ .Release.Namespace }}"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -85,5 +85,5 @@ data:
   roleName: "vault-role-admin-all"
   policyNames: "service-cred-admin,certs-admin"
   servieAccounts: "{{ include "vaultcred.serviceAccountName" . }}"
-  servieAccountNameSpaces: "{{ .Vaules.namespace }}"
+  servieAccountNameSpaces: "{{ .Release.Namespace }}"
 ---
