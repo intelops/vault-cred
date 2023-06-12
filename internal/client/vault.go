@@ -63,7 +63,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 	}
 	vaultSec, err := k8s.GetSecret(context.Background(), vc.conf.VaultSecretName, vc.conf.VaultSecretNameSpace)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error creating vault secret")
+		return nil, errors.WithMessage(err, "error fetching vault secret")
 	}
 	vc.c.SetToken(vaultSec[vc.conf.VaultSecretTokenKeyName])
 	return vc, nil

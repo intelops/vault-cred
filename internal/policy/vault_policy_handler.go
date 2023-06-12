@@ -44,7 +44,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
 	}
-
+	p.log.Infof("found %d policy config maps", len(allConfigMapData))
 	p.policies = map[string]struct{}{}
 	for _, cmData := range allConfigMapData {
 		policyName := cmData["policyName"]
@@ -68,6 +68,7 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessagef(err, "error while getting vault role configmaps")
 	}
+	p.log.Infof("found %d role config maps", len(allConfigMapData))
 
 	for _, cmData := range allConfigMapData {
 		roleName := cmData["roleName"]
