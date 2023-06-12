@@ -26,7 +26,7 @@ type VaultClient struct {
 	log  logging.Logger
 }
 
-func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv) (c *VaultClient, err error) {
+func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	if conf.VaultTokenForRequests {
 		return NewVaultClientForVaultToken(log, conf)
 	}

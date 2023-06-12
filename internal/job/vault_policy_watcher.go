@@ -1,14 +1,16 @@
 package job
 
 import (
+	"context"
+
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
-	"github.com/intelops/vault-cred/internal/client"
+	"github.com/intelops/vault-cred/internal/policy"
 )
 
 type VaultPolicyWatcher struct {
 	log       logging.Logger
-	conf      config.VaultEnv
+	handler   *policy.VaultPolicyHandler
 	frequency string
 }
 
@@ -20,7 +22,7 @@ func NewVaultPolicyWatcher(log logging.Logger, frequency string) (*VaultPolicyWa
 	return &VaultPolicyWatcher{
 		log:       log,
 		frequency: frequency,
-		conf:      conf,
+		handler:   policy.NewVaultPolicyHandler(log, conf),
 	}, nil
 }
 
@@ -30,25 +32,12 @@ func (v *VaultPolicyWatcher) CronSpec() string {
 
 func (v *VaultPolicyWatcher) Run() {
 	v.log.Info("started vault policy watcher")
-	_, err := client.NewVaultClientForVaultToken(v.log, v.conf)
-	if err != nil {
-		v.log.Errorf("%s", err)
+	ctx := context.Background()
+	if err := v.handler.UpdateVaultPolicies(ctx); err != nil {
+		v.log.Errorf("failed to update vault policies, %v", err)
 	}
 
-	// Svc iam creates vault-policy-iam
-	// Svc capten creates vault-policy-capen
-	// get config maps with prefix "vault-policy-<>"
-	// for each config map
-	// read SA name, credentail-acess : [] {"credential-type", "access type"}
-	//"serviceAccount" : "iam-sa"
-	//"credentailAccess" : "system-cred:read, client-cert:admin, xyz: read"
-
-	// prepare role "iam-sa-role" and policy "iam-sa-policy"  with path
-	// paths are based on credential types
-	// secret/data/system-cred/* with read,  secret/data/client-cert/* with read, write, list, delete
-	// secret/data/xyz/* read
-	// create policy
-
-	// is policy exists, is any differnet from vault-policy data
-	// update delta
+	if err := v.handler.UpdateVaultRoles(ctx); err != nil {
+		v.log.Errorf("failed to update roles, %v", err)
+	}
 }

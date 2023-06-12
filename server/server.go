@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/intelops/vault-cred/internal/job"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/intelops/vault-cred/internal/job"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
