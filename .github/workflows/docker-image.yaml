@@ -56,7 +56,8 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
-             
+            latest # Add the "latest" tag
+   
       -
         name: Build and push
         uses: docker/build-push-action@v4
