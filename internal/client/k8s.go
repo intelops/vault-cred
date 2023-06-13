@@ -39,7 +39,7 @@ func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namesp
 		StringData: data,
 	}
 
-	createdSecret, err := k.client.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
+	createdSecret, err := k.client.CoreV1().Secrets(namespace).Update(context.TODO(), secData, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.WithMessage(err, "error in creating vault secret")
 	}
