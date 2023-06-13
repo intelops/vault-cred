@@ -40,6 +40,9 @@ service:
   type: ClusterIP
   port: 8080
 
+env:
+  logLevel: info
+
 vault:
   vaultAddress: https://vault:8200
   secretName: vault-server
