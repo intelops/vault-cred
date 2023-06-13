@@ -56,7 +56,7 @@ func (v *VaultSealWatcher) Run() {
 			v.log.Errorf("failed to get vault seal status, %s", err)
 			return
 		}
-		v.log.Info("vault sealed status: %v", res)
+		v.log.Infof("vault sealed status: %v", res)
 		return
 	} else {
 		v.log.Debug("vault is in unsealed status")
