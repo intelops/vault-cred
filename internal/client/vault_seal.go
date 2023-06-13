@@ -3,13 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
-
-	"path/filepath"
 )
 
 func (vc *VaultClient) IsVaultSealed() (bool, error) {
@@ -38,7 +35,7 @@ func (vc *VaultClient) Unseal() error {
 		return err
 	}
 
-	vc.log.Debugf("found %d vault unseal keys, %v", len(unsealKeys))
+	vc.log.Debugf("found %d vault unseal keys", len(unsealKeys))
 	for _, key := range unsealKeys {
 		_, err := vc.c.Sys().Unseal(key)
 		if err != nil {
@@ -92,26 +89,6 @@ func (vc *VaultClient) generateUnsealKeys() ([]string, string, error) {
 	return unsealKeys, rootToken, err
 }
 
-func (vc *VaultClient) readUnsealKeysFromPath() ([]string, error) {
-	files, err := ioutil.ReadDir(vc.conf.VaultUnSealKeyPath)
-	if err != nil {
-		return nil, err
-	}
-
-	keys := make([]string, 0, len(files))
-	for _, file := range files {
-		if !file.IsDir() {
-			keyPath := filepath.Join(vc.conf.VaultUnSealKeyPath, file.Name())
-			key, err := readFileContent(keyPath)
-			if err != nil {
-				return nil, errors.WithMessagef(err, "error in reading unseal key file %s", keyPath)
-			}
-			keys = append(keys, key)
-		}
-	}
-	return keys, nil
-}
-
 func (vc *VaultClient) readUnsealKeysFromSecret() ([]string, error) {
 	k8s, err := NewK8SClient(vc.log)
 	if err != nil {
@@ -122,8 +99,10 @@ func (vc *VaultClient) readUnsealKeysFromSecret() ([]string, error) {
 		return nil, errors.WithMessage(err, "error creating vault secret")
 	}
 
+	vc.log.Debugf("found %d vault secret vaules", len(vaultSec))
 	unsealKeys := []string{}
 	for key, val := range vaultSec {
+		vc.log.Debugf("REMOVE THIS LOG -->  check prefix %s for %s : %s", vc.conf.VaultSecretUnSealKeyPrefix, key, val)
 		if strings.HasPrefix(key, vc.conf.VaultSecretUnSealKeyPrefix) {
 			unsealKeys = append(unsealKeys, val)
 		}
