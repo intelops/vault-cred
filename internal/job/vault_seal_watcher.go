@@ -51,6 +51,8 @@ func (v *VaultSealWatcher) Run() {
 		}
 		v.log.Info("vault unsealed")
 		return
+	} else {
+		v.log.Debug("vault is in unsealed status")
 	}
-	v.log.Debug("vault is in unsealed status")
+
 }
