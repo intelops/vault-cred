@@ -31,7 +31,7 @@ func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, co
 		return NewVaultClientForVaultToken(log, conf)
 	}
 
-	vc, err := newVaultClient(log, conf)
+	vc, err := NewVaultClient(log, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, co
 }
 
 func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
-	vc, err := newVaultClient(log, conf)
+	vc, err := NewVaultClient(log, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 	return vc, nil
 }
 
-func newVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
+func NewVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	cfg, err := prepareVaultConfig(conf)
 	if err != nil {
 		return nil, err

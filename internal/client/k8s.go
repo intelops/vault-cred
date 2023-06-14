@@ -54,7 +54,7 @@ func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string)
 		return nil, errors.WithMessage(err, "error in creating vault secret")
 	}
 
-	k.log.Debugf("Secret %s fetached from namespace %s", secretName, namespace)
+	k.log.Debugf("Secret %s fetched from namespace %s", secretName, namespace)
 	return secData.DeepCopy().StringData, nil
 }
 
