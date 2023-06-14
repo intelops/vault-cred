@@ -92,7 +92,7 @@ func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (
 
 	allConfigMapData := map[string]map[string]string{}
 	for _, cm := range configMaps {
-		if strings.HasPrefix(cm.Name, "vault-policy") {
+		if strings.HasPrefix(cm.Name, prefix) {
 			cmKey := cm.Namespace + ":" + cm.Name
 			allConfigMapData[cmKey] = cm.Data
 		}
