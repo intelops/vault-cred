@@ -48,14 +48,6 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 	if err != nil {
 		return nil, err
 	}
-	if conf.VaultTokenPath != "" {
-		token, err := readFileContent(conf.VaultTokenPath)
-		if err != nil {
-			return nil, errors.WithMessage(err, "error in reading token file")
-		}
-		vc.c.SetToken(token)
-		return vc, nil
-	}
 
 	k8s, err := NewK8SClient(vc.log)
 	if err != nil {
@@ -65,7 +57,12 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 	if err != nil {
 		return nil, errors.WithMessage(err, "error fetching vault secret")
 	}
-	vc.c.SetToken(vaultSec[vc.conf.VaultSecretTokenKeyName])
+
+	rootToken := vaultSec[vc.conf.VaultSecretTokenKeyName]
+	if len(rootToken) == 0 {
+		return nil, errors.New("vault root token not found")
+	}
+	vc.c.SetToken(rootToken)
 	return vc, nil
 }
 
