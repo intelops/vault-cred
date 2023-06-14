@@ -35,6 +35,10 @@ func (vc *VaultClient) Unseal() error {
 		return err
 	}
 
+	if len(unsealKeys) == 0 {
+		return errors.New("no vault unseal keys found to unseal vault")
+	}
+
 	vc.log.Debugf("found %d vault unseal keys", len(unsealKeys))
 	for _, key := range unsealKeys {
 		_, err := vc.c.Sys().Unseal(key)
@@ -99,7 +103,7 @@ func (vc *VaultClient) readUnsealKeysFromSecret() ([]string, error) {
 		return nil, errors.WithMessage(err, "error creating vault secret")
 	}
 
-	vc.log.Debugf("found %d vault secret vaules", len(vaultSec))
+	vc.log.Debugf("found %d vault secret values", len(vaultSec))
 	unsealKeys := []string{}
 	for key, val := range vaultSec {
 		vc.log.Debugf("REMOVE THIS LOG -->  check prefix %s for %s : %s", vc.conf.VaultSecretUnSealKeyPrefix, key, val)
