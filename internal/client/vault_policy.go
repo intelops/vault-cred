@@ -1,8 +1,13 @@
 package client
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/vault/api"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/rest"
 )
 
 type VaultPolicyData struct {
@@ -66,5 +71,34 @@ func (v *VaultClient) ListPolicies() ([]string, error) {
 }
 
 func (v *VaultClient) CheckAndEnableK8sAuth() error {
-	return v.c.Sys().EnableAuth("kubernetes", "kubernetes", "kubernetes authentication")
+	k8s, err := NewK8SClient(v.log)
+	if err != nil {
+		return errors.WithMessage(err, "error initializing k8s client")
+	}
+
+	config, err := k8s.GetClusterConfig()
+	if err != nil {
+		return errors.WithMessage(err, "failed to get k8s api server endpoint")
+	}
+
+	err = rest.LoadTLSFiles(config)
+	if err != nil {
+		return errors.WithMessage(err, "failed to load k8s tls config")
+	}
+	base64CertData := base64.StdEncoding.EncodeToString([]byte(config.CAData))
+
+	options := api.EnableAuditOptions{
+		Type:        "kubernetes",
+		Description: "Kubernetes authentication",
+		Options: map[string]string{
+			"kubernetes_host":            config.Host,
+			"kubernetes_ca_cert":         base64CertData,
+			"token_reviewer_jwt":         config.BearerToken,
+			"kubernetes_skip_tls_verify": "false",
+		},
+	}
+
+	path := "sys/auth/kubernetes"
+	v.c.Sys().EnableAuditWithOptions(path, &options)
+	return nil
 }

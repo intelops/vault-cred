@@ -29,6 +29,11 @@ func NewK8SClient(log logging.Logger) (*K8SClient, error) {
 	}
 	return &K8SClient{client: clientset, log: log}, nil
 }
+
+func (k *K8SClient) GetClusterConfig() (*rest.Config, error) {
+	return rest.InClusterConfig()
+}
+
 func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namespace string, data map[string]string) error {
 	secData := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

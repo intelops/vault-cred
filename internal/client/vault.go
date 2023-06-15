@@ -3,8 +3,6 @@ package client
 import (
 	"context"
 	"encoding/base64"
-	"os"
-	"strings"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/vault/api"
@@ -129,15 +127,6 @@ func (vc *VaultClient) configureAuthToken(ctx context.Context) (err error) {
 		return errors.New("no auth info was returned after login")
 	}
 	return nil
-}
-
-func readFileContent(path string) (s string, err error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return
-	}
-	s = strings.TrimSpace(string(b))
-	return
 }
 
 func (vc *VaultClient) GetCredential(ctx context.Context, mountPath, secretPath string) (cred map[string]string, err error) {
