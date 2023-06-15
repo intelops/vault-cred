@@ -2,6 +2,7 @@ package policy
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/intelops/go-common/logging"
@@ -43,10 +44,33 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
 	}
 	p.log.Infof("found %d policy config maps", len(allConfigMapData))
+
+	var credentialAccessList []string
+	var saDataList []client.VaultPolicyData
 	for _, cmData := range allConfigMapData {
-		policyName := cmData["policyName"]
-		policyData := cmData["policyData"]
-		err = vc.CreateOrUpdatePolicy(policyName, policyData)
+		serviceAccount := cmData["serviceAccount"]
+		credentialAccess := cmData["credentialAccess"]
+		policyName := serviceAccount + "-policy"
+		p.log.Info("Policy Name", policyName)
+		accessList := strings.Split(credentialAccess, "\n")
+
+		for _, access := range accessList {
+			parts := strings.SplitN(access, ":", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+				credentialAccessList = append(credentialAccessList, fmt.Sprintf("%s: %s", key, value))
+			}
+		}
+
+		saData := client.VaultPolicyData{
+			ServiceAccount:       serviceAccount,
+			CredentialAccessList: credentialAccessList,
+		}
+		saDataList = append(saDataList, saData)
+		policydata := vc.PreparePolicyData(saDataList)
+		p.log.Info("PolicyData", policydata)
+		err := vc.CreateOrUpdPolicy(policyName, policydata)
 		if err != nil {
 			return errors.WithMessagef(err, "error while creating vault policy %s, %v", policyName, cmData)
 		}

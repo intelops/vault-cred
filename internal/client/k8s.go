@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 
 	"github.com/intelops/go-common/logging"
@@ -9,7 +10,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 type K8SClient struct {
@@ -18,9 +20,17 @@ type K8SClient struct {
 }
 
 func NewK8SClient(log logging.Logger) (*K8SClient, error) {
-	config, err := rest.InClusterConfig()
+	// config, err := rest.InClusterConfig()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	var kubeconfig string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = filepath.Join(home, ".kube", "config")
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
