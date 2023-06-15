@@ -11,14 +11,12 @@ import (
 )
 
 type VaultPolicyHandler struct {
-	log      logging.Logger
-	conf     config.VaultEnv
-	policies map[string]struct{}
+	log  logging.Logger
+	conf config.VaultEnv
 }
 
 func NewVaultPolicyHandler(log logging.Logger, conf config.VaultEnv) *VaultPolicyHandler {
-	return &VaultPolicyHandler{log: log, conf: conf,
-		policies: map[string]struct{}{}}
+	return &VaultPolicyHandler{log: log, conf: conf}
 }
 
 func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix string) (map[string]map[string]string, error) {
@@ -45,7 +43,6 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
 	}
 	p.log.Infof("found %d policy config maps", len(allConfigMapData))
-	p.policies = map[string]struct{}{}
 	for _, cmData := range allConfigMapData {
 		policyName := cmData["policyName"]
 		policyData := cmData["policyData"]
@@ -53,23 +50,37 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 		if err != nil {
 			return errors.WithMessagef(err, "error while creating vault policy %s, %v", policyName, cmData)
 		}
-		p.policies[policyName] = struct{}{}
 	}
 	return nil
 }
 
 func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
+	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-role-")
+	if err != nil {
+		return errors.WithMessagef(err, "error while getting vault role configmaps")
+	}
+
+	if len(allConfigMapData) == 0 {
+		p.log.Infof("no vault roles found %d to configure")
+		return nil
+	}
+
 	vc, err := client.NewVaultClientForVaultToken(p.log, p.conf)
 	if err != nil {
 		return err
 	}
 
-	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-role-")
+	err = vc.CheckAndEnableK8sAuth()
 	if err != nil {
-		return errors.WithMessagef(err, "error while getting vault role configmaps")
+		return err
 	}
-	p.log.Infof("found %d role config maps", len(allConfigMapData))
 
+	existingPolicies, err := vc.ListPolicies()
+	if err != nil {
+		return err
+	}
+
+	p.log.Infof("found %d role config maps", len(allConfigMapData))
 	for _, cmData := range allConfigMapData {
 		roleName := cmData["roleName"]
 		policyNames := cmData["policyNames"]
@@ -79,14 +90,21 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 		policyNameList := strings.Split(policyNames, ",")
 		policiesExist := true
 		for _, policyName := range policyNameList {
-			if _, ok := p.policies[policyName]; !ok {
+			found := false
+			for _, existingPolicyName := range existingPolicies {
+				if existingPolicyName == policyName {
+					found = true
+					break
+				}
+			}
+			if !found {
 				policiesExist = false
 				break
 			}
 		}
 
 		if !policiesExist {
-			p.log.Errorf("all polices are not exist to map to the role, %v", cmData)
+			p.log.Errorf("all polices are not exist to map to the role %s, %v", roleName, cmData)
 			continue
 		}
 

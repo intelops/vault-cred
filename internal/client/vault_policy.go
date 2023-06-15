@@ -13,12 +13,8 @@ type VaultPolicyData struct {
 	CredentialAccessList    map[string][]string `json:"credentialAccessList"`
 }
 
-func (v *VaultClient) CreateOrUpdatePolicy(policyName, data string) error {
-	policyData := make(map[string]interface{})
-	policyData["policy"] = data
-
-	path := fmt.Sprintf("/sys/policy/%s", policyName)
-	_, err := v.c.Logical().Write(path, policyData)
+func (v *VaultClient) CreateOrUpdatePolicy(policyName, rules string) error {
+	err := v.c.Sys().PutPolicy(policyName, rules)
 	if err != nil {
 		return err
 	}
@@ -28,8 +24,7 @@ func (v *VaultClient) CreateOrUpdatePolicy(policyName, data string) error {
 }
 
 func (v *VaultClient) DeletePolicy(policyName string) error {
-	path := fmt.Sprintf("/sys/policy/%s", policyName)
-	_, err := v.c.Logical().Delete(path)
+	err := v.c.Sys().DeletePolicy(policyName)
 	if err != nil {
 		return err
 	}
@@ -64,4 +59,12 @@ func (v *VaultClient) DeleteRole(roleName string) error {
 	}
 	v.log.Infof("Deleted role mapping: %s", roleName)
 	return nil
+}
+
+func (v *VaultClient) ListPolicies() ([]string, error) {
+	return v.c.Sys().ListPolicies()
+}
+
+func (v *VaultClient) CheckAndEnableK8sAuth() error {
+	return v.c.Sys().EnableAuth("kubernetes", "kubernetes", "kubernetes authentication")
 }

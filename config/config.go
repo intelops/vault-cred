@@ -21,8 +21,6 @@ type VaultEnv struct {
 	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
 	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-server"`
 	VaultSecretNameSpace       string        `envconfig:"VAULT_SECRET_NAMESPACE" default:"default"`
-	VaultTokenPath             string        `envconfig:"VAULT_TOKEN_PATH"`
-	VaultUnSealKeyPath         string        `envconfig:"VAULT_UNSEAL_PATH"`
 	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"root-token"`
 	VaultSecretUnSealKeyPrefix string        `envconfig:"VAULT_SECRET_UNSEAL_KEY_PREFIX" default:"unsealkey"`
 }
