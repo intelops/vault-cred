@@ -63,7 +63,6 @@ func (vc *VaultClient) initializeVaultSecret() error {
 	}
 
 	stringData[vc.conf.VaultSecretTokenKeyName] = rootToken
-	vc.log.Debugf("REMOVE THIS LOG --> vault secret data, %v", stringData)
 	k8s, err := NewK8SClient(vc.log)
 	if err != nil {
 		return errors.WithMessage(err, "error initializing k8s client")
@@ -106,7 +105,6 @@ func (vc *VaultClient) readUnsealKeysFromSecret() ([]string, error) {
 	vc.log.Debugf("found %d vault secret values", len(vaultSec))
 	unsealKeys := []string{}
 	for key, val := range vaultSec {
-		vc.log.Debugf("REMOVE THIS LOG -->  check prefix %s for %s : %s", vc.conf.VaultSecretUnSealKeyPrefix, key, val)
 		if strings.HasPrefix(key, vc.conf.VaultSecretUnSealKeyPrefix) {
 			unsealKeys = append(unsealKeys, val)
 		}

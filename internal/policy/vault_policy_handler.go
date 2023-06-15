@@ -72,12 +72,12 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 
 	err = vc.CheckAndEnableK8sAuth()
 	if err != nil {
-		return err
+		return errors.WithMessagef(err, "error while enabled kubernetes auth")
 	}
 
 	existingPolicies, err := vc.ListPolicies()
 	if err != nil {
-		return err
+		p.log.Errorf("error while listing vault policies, %v", err)
 	}
 
 	p.log.Infof("found %d role config maps", len(allConfigMapData))
@@ -105,7 +105,7 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 
 		if !policiesExist {
 			p.log.Errorf("all polices are not exist to map to the role %s, %v", roleName, cmData)
-			continue
+			//continue
 		}
 
 		err = vc.CreateOrUpdateRole(roleName, policyNameList,
