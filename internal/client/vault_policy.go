@@ -64,3 +64,7 @@ func (v *VaultClient) DeleteRole(roleName string) error {
 func (v *VaultClient) ListPolicies() ([]string, error) {
 	return v.c.Sys().ListPolicies()
 }
+
+func (v *VaultClient) CheckAndEnableK8sAuth() error {
+	return v.c.Sys().EnableAuth("kubernetes", "kubernetes", "kubernetes authentication")
+}
