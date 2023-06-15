@@ -76,7 +76,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: pr-${{ github.event.pull_request.number }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             "GITHUB_TOKEN=${{ secrets.TOKEN }}"
