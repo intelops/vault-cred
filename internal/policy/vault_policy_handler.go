@@ -70,6 +70,11 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 		return err
 	}
 
+	err = vc.CheckAndEnableK8sAuth()
+	if err != nil {
+		return err
+	}
+
 	existingPolicies, err := vc.ListPolicies()
 	if err != nil {
 		return err
