@@ -68,3 +68,15 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             "GITHUB_TOKEN=${{ secrets.TOKEN }}"
+            
+      -
+        name: Build and push on PR
+        uses: docker/build-push-action@v4
+        if: github.event_name == 'pull_request'
+        with:
+          context: .
+          push: true
+          tags: pr-${{ github.event.pull_request.number }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            "GITHUB_TOKEN=${{ secrets.TOKEN }}"
