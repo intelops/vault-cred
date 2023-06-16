@@ -57,7 +57,7 @@ vault:
 vaultPolicies:
   - name: vault-policy-service-cred-read
     data:
-      policyName: service-cred-read
+      policyName: vault-policy-service-cred-read
       policyData: |
         path "secret/service-cred/*" {
           capabilities = ["read"]

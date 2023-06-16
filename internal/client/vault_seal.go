@@ -33,13 +33,14 @@ func (vc *VaultClient) Unseal() error {
 	}
 
 	if !status.Initialized && len(rootToken) == 0 && len(unsealKeys) == 0 {
+		vc.log.Debug("intializing vault secret")
 		err = vc.initializeVaultSecret()
 		if err != nil {
 			return err
 		}
 	}
 
-	vc.log.Debugf("found %d vault unseal keys", len(unsealKeys))
+	vc.log.Debugf("found %d vault unseal keys and roottoken length %d", len(unsealKeys), len(rootToken))
 	for _, key := range unsealKeys {
 		_, err := vc.c.Sys().Unseal(key)
 		if err != nil {
@@ -50,7 +51,6 @@ func (vc *VaultClient) Unseal() error {
 }
 
 func (vc *VaultClient) initializeVaultSecret() error {
-	vc.log.Debug("intializing vault secret")
 	unsealKeys, rootToken, err := vc.generateUnsealKeys()
 	if err != nil {
 		return errors.WithMessage(err, "error while generating unseal keys")
@@ -101,6 +101,7 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 	vaultSec, err := k8s.GetSecret(context.Background(), vc.conf.VaultSecretName, vc.conf.VaultSecretNameSpace)
 	if err != nil {
 		if strings.Contains(err.Error(), "secret not found") {
+			vc.log.Debugf("secret %d not found", vc.conf.VaultSecretName)
 			return "", nil, nil
 		}
 		return "", nil, errors.WithMessage(err, "error fetching vault secret")
