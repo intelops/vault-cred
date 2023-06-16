@@ -2,14 +2,17 @@ package client
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 type K8SClient struct {
@@ -18,9 +21,17 @@ type K8SClient struct {
 }
 
 func NewK8SClient(log logging.Logger) (*K8SClient, error) {
-	config, err := rest.InClusterConfig()
+	// config, err := rest.InClusterConfig()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	var kubeconfig string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = filepath.Join(home, ".kube", "config")
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
@@ -98,4 +109,19 @@ func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (
 		}
 	}
 	return allConfigMapData, nil
+}
+func (k *K8SClient) GetConfigMapCreationTimestamp(ctx context.Context, configMapName, namespace string) (time.Time, error) {
+
+ // 
+	configMap, err := k.client.CoreV1().ConfigMaps(namespace).Get(ctx,configMapName, metav1.GetOptions{})
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	creationTimestamp, err := time.Parse(time.RFC3339, configMap.ObjectMeta.CreationTimestamp.Format(time.RFC3339))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return creationTimestamp, nil
 }
