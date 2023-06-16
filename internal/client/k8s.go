@@ -7,6 +7,7 @@ import (
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -44,28 +45,29 @@ func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namesp
 	}
 
 	_, err := k.client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err != nil && err.Error() == "secrets \""+secretName+"\" not found" {
+	if err != nil && k8serrors.IsNotFound(err) {
 		createdSecret, err := k.client.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
 		if err != nil {
 			return errors.WithMessage(err, "error in creating vault secret")
 		}
 		k.log.Infof("Secret %s created in namespace %s", createdSecret.Name, createdSecret.Namespace)
-	} else if (err != nil) && err.Error() != "secrets \""+secretName+"\" not found" {
-		return errors.WithMessage(err, "error in getting vault secret")
-	} else {
-		updatedsecret, err := k.client.CoreV1().Secrets(namespace).Update(context.TODO(), secData, metav1.UpdateOptions{})
-		if err != nil {
-			return errors.WithMessage(err, "error in creating vault secret")
-		}
-		k.log.Infof("Secret %s updated in namespace %s", updatedsecret.Name, updatedsecret.Namespace)
+		return nil
 	}
 
+	updatedsecret, err := k.client.CoreV1().Secrets(namespace).Update(context.TODO(), secData, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.WithMessage(err, "error in creating vault secret")
+	}
+	k.log.Infof("Secret %s updated in namespace %s", updatedsecret.Name, updatedsecret.Namespace)
 	return nil
 }
 
 func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string) (map[string]string, error) {
 	secData, err := k.client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			return nil, errors.New("secret not found")
+		}
 		return nil, errors.WithMessage(err, "error in creating vault secret")
 	}
 

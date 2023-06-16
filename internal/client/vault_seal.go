@@ -23,23 +23,24 @@ func (vc *VaultClient) Unseal() error {
 		return err
 	}
 
-	if !status.Initialized {
+	if !status.Sealed {
+		return nil
+	}
+
+	rootToken, unsealKeys, err := vc.getVaultSecretValues()
+	if err != nil {
+		return err
+	}
+
+	if !status.Initialized && len(rootToken) == 0 && len(unsealKeys) == 0 {
+		vc.log.Debug("intializing vault secret")
 		err = vc.initializeVaultSecret()
 		if err != nil {
 			return err
 		}
 	}
 
-	unsealKeys, err := vc.readUnsealKeysFromSecret()
-	if err != nil {
-		return err
-	}
-
-	if len(unsealKeys) == 0 {
-		return errors.New("no vault unseal keys found to unseal vault")
-	}
-
-	vc.log.Debugf("found %d vault unseal keys", len(unsealKeys))
+	vc.log.Debugf("found %d vault unseal keys and roottoken length %d", len(unsealKeys), len(rootToken))
 	for _, key := range unsealKeys {
 		_, err := vc.c.Sys().Unseal(key)
 		if err != nil {
@@ -50,7 +51,6 @@ func (vc *VaultClient) Unseal() error {
 }
 
 func (vc *VaultClient) initializeVaultSecret() error {
-	vc.log.Debug("intializing vault secret")
 	unsealKeys, rootToken, err := vc.generateUnsealKeys()
 	if err != nil {
 		return errors.WithMessage(err, "error while generating unseal keys")
@@ -92,22 +92,32 @@ func (vc *VaultClient) generateUnsealKeys() ([]string, string, error) {
 	return unsealKeys, rootToken, err
 }
 
-func (vc *VaultClient) readUnsealKeysFromSecret() ([]string, error) {
+func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 	k8s, err := NewK8SClient(vc.log)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error initializing k8s client")
+		return "", nil, errors.WithMessage(err, "error initializing k8s client")
 	}
+
 	vaultSec, err := k8s.GetSecret(context.Background(), vc.conf.VaultSecretName, vc.conf.VaultSecretNameSpace)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error creating vault secret")
+		if strings.Contains(err.Error(), "secret not found") {
+			vc.log.Debugf("secret %d not found", vc.conf.VaultSecretName)
+			return "", nil, nil
+		}
+		return "", nil, errors.WithMessage(err, "error fetching vault secret")
 	}
 
 	vc.log.Debugf("found %d vault secret values", len(vaultSec))
 	unsealKeys := []string{}
+	var rootToken string
 	for key, val := range vaultSec {
 		if strings.HasPrefix(key, vc.conf.VaultSecretUnSealKeyPrefix) {
 			unsealKeys = append(unsealKeys, val)
+			continue
+		}
+		if strings.EqualFold(key, vc.conf.VaultSecretTokenKeyName) {
+			rootToken = val
 		}
 	}
-	return unsealKeys, nil
+	return rootToken, unsealKeys, nil
 }

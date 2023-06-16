@@ -77,10 +77,10 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 
 	existingPolicies, err := vc.ListPolicies()
 	if err != nil {
-		p.log.Errorf("error while listing vault policies, %v", err)
+		return errors.WithMessage(err, "error while listing vault policies")
 	}
 
-	p.log.Infof("found %d role config maps", len(allConfigMapData))
+	p.log.Infof("found %d role config maps and existing policies", len(allConfigMapData), existingPolicies)
 	for _, cmData := range allConfigMapData {
 		roleName := cmData["roleName"]
 		policyNames := cmData["policyNames"]
@@ -105,7 +105,7 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 
 		if !policiesExist {
 			p.log.Errorf("all polices are not exist to map to the role %s, %v", roleName, cmData)
-			//continue
+			continue
 		}
 
 		err = vc.CreateOrUpdateRole(roleName, policyNameList,
