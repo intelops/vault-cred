@@ -92,7 +92,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 			}
 			p.log.Infof("Created Vault policy %s", policyName)
 		} else {
-			p.log.Infof("Vault policy %s already exists", policyName)
+			//	p.log.Infof("Vault policy %s already exists", policyName)
 		}
 
 		updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
@@ -109,7 +109,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 			}
 			p.log.Infof("Updated Vault policy %s", policyName)
 		} else {
-			p.log.Infof("No update needed for Vault policy %s", policyName)
+			//p.log.Infof("No update needed for Vault policy %s", policyName)
 			continue
 		}
 
