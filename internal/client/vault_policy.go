@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"github.com/hashicorp/vault/api"
 )
 
 type VaultPolicyData struct {
@@ -52,7 +51,7 @@ func (v *VaultClient) CreateOrUpdateRole(roleName string, serviceAccounts, names
 		// If the role doesn't exist, create it
 		_, err = v.c.Logical().Write(path, roleData)
 		if err != nil {
-			
+
 			return err
 		}
 		v.log.Infof("Created role mapping: %s", roleName)
@@ -70,22 +69,6 @@ func (v *VaultClient) CreateOrUpdateRole(roleName string, serviceAccounts, names
 	// }
 	//v.log.Infof("Created role mapping: %s", roleName)
 	return nil
-}
-func (vc *VaultClient) RoleExists(roleName string) (bool, error) {
-	// Construct the API endpoint for retrieving role details
- 
-    path := fmt.Sprintf("/auth/kubernetes/role/%s", roleName)
-	// Send a GET request to the Vault API to retrieve role details
-	_, err := vc.c.Logical().Read(path)
-	if err != nil {
-		// Check if the error is due to the role not existing
-		if apiErr, ok := err.(*api.ResponseError); ok && apiErr.StatusCode == 404 {
-			return false, nil // Role does not exist
-		}
-		return false, err // Error occurred while retrieving role details
-	}
-
-	return true, nil // Role exists
 }
 
 func (v *VaultClient) DeleteRole(roleName string) error {
@@ -106,8 +89,8 @@ func (v *VaultClient) CheckAndEnableK8sAuth() error {
 	return v.c.Sys().EnableAuth("kubernetes", "kubernetes", "kubernetes authentication")
 }
 
-func (v *VaultClient)  CheckVaultPolicyExists(policyName string) (bool, error) {
-	
+func (v *VaultClient) CheckVaultPolicyExists(policyName string) (bool, error) {
+
 	// Get the list of existing policies
 	policies, err := v.c.Sys().ListPolicies()
 	if err != nil {
