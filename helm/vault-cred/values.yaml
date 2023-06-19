@@ -57,7 +57,7 @@ vault:
 vaultPolicies:
   - name: vault-policy-service-cred-read
     data:
-      policyName: service-cred-read
+      policyName: vault-policy-service-cred-read
       policyData: |
         path "secret/service-cred/*" {
           capabilities = ["read"]
@@ -97,18 +97,18 @@ vaultPolicies:
         }
 
 vaultRoles:
-  - name: vault-role-read-all-creds
-    data:
-      roleName: "vault-role-read-all"
-      policyNames: "service-cred-read,certs-read"
-      servieAccounts: ""
-      servieAccountNameSpaces: ""
-  - name: vault-role-admin-all-creds
-    data:
-      roleName: "vault-role-admin-all-creds"
-      policyNames: "service-cred-admin,certs-admin"
-      servieAccounts: ""
-      servieAccountNameSpaces: ""
+#  - name: vault-role-read-all-creds
+#    data:
+#      roleName: "vault-role-read-all"
+#      policyNames: "service-cred-read,certs-read"
+#      servieAccounts: ""
+#      servieAccountNameSpaces: ""
+#  - name: vault-role-admin-all-creds
+#    data:
+#      roleName: "vault-role-admin-all-creds"
+#      policyNames: "service-cred-admin,certs-admin"
+#      servieAccounts: ""
+#      servieAccountNameSpaces: ""
 
 ingress:
   enabled: false

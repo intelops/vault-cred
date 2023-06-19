@@ -72,15 +72,15 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 
 	err = vc.CheckAndEnableK8sAuth()
 	if err != nil {
-		return err
+		return errors.WithMessagef(err, "error while enabled kubernetes auth")
 	}
 
 	existingPolicies, err := vc.ListPolicies()
 	if err != nil {
-		return err
+		return errors.WithMessage(err, "error while listing vault policies")
 	}
 
-	p.log.Infof("found %d role config maps", len(allConfigMapData))
+	p.log.Infof("found %d role config maps and existing policies", len(allConfigMapData), existingPolicies)
 	for _, cmData := range allConfigMapData {
 		roleName := cmData["roleName"]
 		policyNames := cmData["policyNames"]
