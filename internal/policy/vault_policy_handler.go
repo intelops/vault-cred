@@ -171,6 +171,7 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 			continue
 		}
 		exists, err := vc.RoleExists(roleName)
+		p.log.Info("Vault role exists", exists)
 		if err != nil {
 			return err
 		}
