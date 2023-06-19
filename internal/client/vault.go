@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/vault/api"
@@ -169,4 +170,20 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 		err = errors.WithMessagef(err, "error in deleting credentail at %s", secretPath)
 	}
 	return
+}
+func (vc *VaultClient) RoleExists(roleName string) (bool, error) {
+	// Construct the API endpoint for retrieving role details
+ 
+    path := fmt.Sprintf("/auth/kubernetes/role/%s", roleName)
+	// Send a GET request to the Vault API to retrieve role details
+	_, err := vc.c.Logical().Read(path)
+	if err != nil {
+		// Check if the error is due to the role not existing
+		if apiErr, ok := err.(*api.ResponseError); ok && apiErr.StatusCode == 404 {
+			return false, nil // Role does not exist
+		}
+		return false, err // Error occurred while retrieving role details
+	}
+
+	return true, nil // Role exists
 }

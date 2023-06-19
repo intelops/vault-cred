@@ -125,3 +125,21 @@ func (v *VaultClient) CheckAndEnableK8sAuth() error {
 	v.log.Infof("auth kubernetes enabled")
 	return nil
 }
+func (v *VaultClient) CheckVaultPolicyExists(policyName string) (bool, error) {
+
+	// Get the list of existing policies
+	policies, err := v.c.Sys().ListPolicies()
+	if err != nil {
+		return false, fmt.Errorf("failed to retrieve Vault policies: %v", err)
+	}
+
+	// Check if the desired policy exists in the list
+	for _, policy := range policies {
+		if policy == policyName {
+			fmt.Print("POlicy", policy)
+			return true, nil
+		}
+	}
+
+	return false, nil
+}

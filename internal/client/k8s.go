@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
@@ -106,3 +107,18 @@ func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (
 	}
 	return allConfigMapData, nil
 }
+func (k *K8SClient) GetConfigMapCreationTimestamp(ctx context.Context, configMapName, namespace string) (time.Time, error) {
+
+	// 
+	   configMap, err := k.client.CoreV1().ConfigMaps(namespace).Get(ctx,configMapName, metav1.GetOptions{})
+	   if err != nil {
+		   return time.Time{}, err
+	   }
+   
+	   creationTimestamp, err := time.Parse(time.RFC3339, configMap.ObjectMeta.CreationTimestamp.Format(time.RFC3339))
+	   if err != nil {
+		   return time.Time{}, err
+	   }
+   
+	   return creationTimestamp, nil
+   }
