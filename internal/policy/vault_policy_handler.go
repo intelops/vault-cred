@@ -75,6 +75,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 
 		nsname, configname := extractNamespaceAndName(cmname)
 		originalTimestamp, found := configMapTimestampCache.Get(cmname)
+		p.log.Info("Original Time stamp", originalTimestamp)
 		if found {
 			// Check if the timestamp has changed
 			updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
@@ -82,7 +83,9 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 				p.log.Errorf("Error while checking timestamp: %v", err)
 				continue
 			}
+			p.log.Info("Updated Time Stamp", updatedTimestamp)
 			if originalTimestamp != updatedTimestamp {
+
 				// Update the Vault policy based on the updated ConfigMap
 				// err = vc.CreateOrUpdateRole(roleName, policyNameList,
 				// 	strings.Split(servieAccounts, ","),
@@ -112,6 +115,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 
 			// Store the timestamp in the cache
 			updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
+			p.log.Info("updatedTimestamp", updatedTimestamp)
 			if err != nil {
 				p.log.Errorf("Error while getting timestamp: %v", err)
 			} else {
