@@ -57,7 +57,6 @@ func extractNamespaceAndName(cmname string) (string, string) {
 	configname := parts[1]
 	return namespace, configname
 }
-
 func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 	vc, err := client.NewVaultClientForVaultToken(p.log, p.conf)
 	if err != nil {
@@ -75,50 +74,116 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 		policyData := cmData["policyData"]
 
 		nsname, configname := extractNamespaceAndName(cmname)
-
-		policyExists, err := vc.CheckVaultPolicyExists(policyName)
-
-		if err != nil {
-			p.log.Errorf("Error while checking if Vault policy exists: %v", err)
-			continue
-		}
-		originalTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
-		if err != nil {
-			p.log.Errorf("Error while getting timestamp", err)
-		}
-		if !policyExists {
-			// Create Vault policy if it doesn't exist
-			err = vc.CreateOrUpdatePolicy(policyName, policyData)
+		originalTimestamp, found := configMapTimestampCache.Get(cmname)
+		if found {
+			// Check if the timestamp has changed
+			updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
 			if err != nil {
-				p.log.Errorf("Error while creating Vault policy %s: %v", policyName, err)
+				p.log.Errorf("Error while checking timestamp: %v", err)
 				continue
 			}
-			p.log.Infof("Created Vault policy %s", policyName)
-		} else {
-			//	p.log.Infof("Vault policy %s already exists", policyName)
-		}
+			if originalTimestamp != updatedTimestamp {
+				// Update the Vault policy based on the updated ConfigMap
+				// err = vc.CreateOrUpdateRole(roleName, policyNameList,
+				// 	strings.Split(servieAccounts, ","),
+				// 	strings.Split(servieAccountNameSpaces, ","))
+				err = vc.CreateOrUpdatePolicy(policyName, policyData)
+				if err != nil {
+					p.log.Errorf("Error while updating Vault policy %s: %v", policyName, err)
+					continue
+				}
+				p.log.Infof("Updated Vault policy %s", policyName)
 
-		updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
-		if err != nil {
-			p.log.Errorf("Error while checking timestamp: %v", err)
-			continue
-		}
-
-		if originalTimestamp != updatedTimestamp {
-			// Update the Vault policy based on the updated ConfigMap
-			err = vc.CreateOrUpdatePolicy(policyName, policyData)
-			if err != nil {
-				return errors.WithMessagef(err, "error while creating vault policy %s, %v", policyName, cmData)
+				// Update the cache with the new timestamp
+				configMapTimestampCache.AddOrUpdate(cmname, updatedTimestamp)
+			} else {
+				p.log.Infof("No update needed for Vault policy %s", policyName)
 			}
-			p.log.Infof("Updated Vault policy %s", policyName)
 		} else {
-			//p.log.Infof("No update needed for Vault policy %s", policyName)
-			continue
-		}
+			// ConfigMap is new, create the Vault role
+			p.log.Infof("Vault policy %s does not already exist", policyName)
+			err = vc.CreateOrUpdatePolicy(policyName, policyData)
+			// err = vc.CreateOrUpdateRole(roleName, policyNameList,
+			// 	strings.Split(servieAccounts, ","),
+			// 	strings.Split(servieAccountNameSpaces, ","))
+			if err != nil {
+				return errors.WithMessagef(err, "error while creating vault policy %s", policyName)
+			}
 
+			// Store the timestamp in the cache
+			updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
+			if err != nil {
+				p.log.Errorf("Error while getting timestamp: %v", err)
+			} else {
+				configMapTimestampCache.AddOrUpdate(cmname, updatedTimestamp)
+			}
+		}
 	}
+
 	return nil
 }
+
+// func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
+// 	vc, err := client.NewVaultClientForVaultToken(p.log, p.conf)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-policy-")
+// 	if err != nil {
+// 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
+// 	}
+// 	p.log.Infof("found %d policy config maps", len(allConfigMapData))
+
+// 	for cmname, cmData := range allConfigMapData {
+// 		policyName := cmData["policyName"]
+// 		policyData := cmData["policyData"]
+
+// 		nsname, configname := extractNamespaceAndName(cmname)
+
+// 		policyExists, err := vc.CheckVaultPolicyExists(policyName)
+
+// 		if err != nil {
+// 			p.log.Errorf("Error while checking if Vault policy exists: %v", err)
+// 			continue
+// 		}
+// 		originalTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
+// 		if err != nil {
+// 			p.log.Errorf("Error while getting timestamp", err)
+// 		}
+// 		if !policyExists {
+// 			// Create Vault policy if it doesn't exist
+// 			err = vc.CreateOrUpdatePolicy(policyName, policyData)
+// 			if err != nil {
+// 				p.log.Errorf("Error while creating Vault policy %s: %v", policyName, err)
+// 				continue
+// 			}
+// 			p.log.Infof("Created Vault policy %s", policyName)
+// 		} else {
+// 			//	p.log.Infof("Vault policy %s already exists", policyName)
+// 		}
+
+// 		updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
+// 		if err != nil {
+// 			p.log.Errorf("Error while checking timestamp: %v", err)
+// 			continue
+// 		}
+
+// 		if originalTimestamp != updatedTimestamp {
+// 			// Update the Vault policy based on the updated ConfigMap
+// 			err = vc.CreateOrUpdatePolicy(policyName, policyData)
+// 			if err != nil {
+// 				return errors.WithMessagef(err, "error while creating vault policy %s, %v", policyName, cmData)
+// 			}
+// 			p.log.Infof("Updated Vault policy %s", policyName)
+// 		} else {
+// 			//p.log.Infof("No update needed for Vault policy %s", policyName)
+// 			continue
+// 		}
+
+// 	}
+// 	return nil
+// }
 
 func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-role-")
