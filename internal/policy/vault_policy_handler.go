@@ -115,7 +115,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 
 			// Store the timestamp in the cache
 			updatedTimestamp, err := p.GetConfigMapTime(ctx, configname, nsname)
-			p.log.Info("updatedTimestamp", updatedTimestamp)
+			p.log.Info("updated Time stamp", updatedTimestamp)
 			if err != nil {
 				p.log.Errorf("Error while getting timestamp: %v", err)
 			} else {
