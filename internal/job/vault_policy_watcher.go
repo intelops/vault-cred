@@ -31,7 +31,7 @@ func (v *VaultPolicyWatcher) CronSpec() string {
 }
 
 func (v *VaultPolicyWatcher) Run() {
-	v.log.Info("started vault policy watcher")
+	v.log.Debug("started vault policy watcher")
 	ctx := context.Background()
 	if err := v.handler.UpdateVaultPolicies(ctx); err != nil {
 		v.log.Errorf("failed to update vault policies, %v", err)

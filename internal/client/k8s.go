@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
@@ -16,6 +17,13 @@ import (
 type K8SClient struct {
 	client *kubernetes.Clientset
 	log    logging.Logger
+}
+
+type ConfigMapData struct {
+	Name            string
+	Namespace       string
+	Data            map[string]string
+	LastUpdatedTime time.Time
 }
 
 func NewK8SClient(log logging.Logger) (*K8SClient, error) {
@@ -82,7 +90,7 @@ func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string)
 
 }
 
-func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (map[string]map[string]string, error) {
+func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) ([]ConfigMapData, error) {
 	configMaps := []corev1.ConfigMap{}
 	namespaces, err := k.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -97,11 +105,21 @@ func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (
 		configMaps = append(configMaps, cmList.Items...)
 	}
 
-	allConfigMapData := map[string]map[string]string{}
+	allConfigMapData := []ConfigMapData{}
 	for _, cm := range configMaps {
 		if strings.HasPrefix(cm.Name, prefix) {
-			cmKey := cm.Namespace + ":" + cm.Name
-			allConfigMapData[cmKey] = cm.Data
+			lastUpdatedTime, err := time.Parse(time.RFC3339, cm.ObjectMeta.CreationTimestamp.Format(time.RFC3339))
+			if err != nil {
+				k.log.Debugf("Configmap %s doesn't has vaild time, skipping", cm.Name, cm.Namespace)
+				continue
+			}
+			configMapData := ConfigMapData{
+				Name:            cm.Name,
+				Namespace:       cm.Namespace,
+				Data:            cm.Data,
+				LastUpdatedTime: lastUpdatedTime,
+			}
+			allConfigMapData = append(allConfigMapData, configMapData)
 		}
 	}
 	return allConfigMapData, nil

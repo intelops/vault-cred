@@ -2,6 +2,8 @@ package policy
 
 import (
 	"context"
+	"fmt"
+
 	"strings"
 
 	"github.com/intelops/go-common/logging"
@@ -11,15 +13,19 @@ import (
 )
 
 type VaultPolicyHandler struct {
-	log  logging.Logger
-	conf config.VaultEnv
+	log               logging.Logger
+	conf              config.VaultEnv
+	policyConfigCache vaultConfigData
+	roleConfigCache   vaultConfigData
 }
 
 func NewVaultPolicyHandler(log logging.Logger, conf config.VaultEnv) *VaultPolicyHandler {
-	return &VaultPolicyHandler{log: log, conf: conf}
+	return &VaultPolicyHandler{log: log, conf: conf,
+		policyConfigCache: newVaultConfigMapCache(),
+		roleConfigCache:   newVaultConfigMapCache()}
 }
 
-func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix string) (map[string]map[string]string, error) {
+func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix string) ([]client.ConfigMapData, error) {
 	k8s, err := client.NewK8SClient(p.log)
 	if err != nil {
 		return nil, err
@@ -42,13 +48,32 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 	if err != nil {
 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
 	}
-	p.log.Infof("found %d policy config maps", len(allConfigMapData))
+
+	p.log.Debugf("found %d policy config maps", len(allConfigMapData))
 	for _, cmData := range allConfigMapData {
-		policyName := cmData["policyName"]
-		policyData := cmData["policyData"]
-		err = vc.CreateOrUpdatePolicy(policyName, policyData)
-		if err != nil {
-			return errors.WithMessagef(err, "error while creating vault policy %s, %v", policyName, cmData)
+		policyName := cmData.Data["policyName"]
+		policyData := cmData.Data["policyData"]
+
+		cmKey := fmt.Sprintf("%s:%s", cmData.Name, cmData.Namespace)
+		existingCmData, found := p.policyConfigCache.Get(cmKey)
+		if found {
+			if existingCmData.LastUpdatedTime != cmData.LastUpdatedTime {
+				err = vc.CreateOrUpdatePolicy(policyName, policyData)
+				if err != nil {
+					p.log.Errorf("error while updating Vault policy %s: %v", policyName, err)
+					continue
+				}
+				p.policyConfigCache.Put(cmKey, cmData)
+			} else {
+				p.log.Debugf("no update needed for vault policy %s", policyName)
+			}
+		} else {
+			err = vc.CreateOrUpdatePolicy(policyName, policyData)
+			if err != nil {
+				p.log.Errorf("error while creating Vault policy %s: %v", policyName, err)
+				continue
+			}
+			p.policyConfigCache.Put(cmKey, cmData)
 		}
 	}
 	return nil
@@ -61,7 +86,7 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 	}
 
 	if len(allConfigMapData) == 0 {
-		p.log.Infof("no vault roles found %d to configure")
+		p.log.Debugf("%d vault roles found to configure")
 		return nil
 	}
 
@@ -72,22 +97,23 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 
 	err = vc.CheckAndEnableK8sAuth()
 	if err != nil {
-		return errors.WithMessagef(err, "error while enabled kubernetes auth")
+		return err
 	}
 
 	existingPolicies, err := vc.ListPolicies()
 	if err != nil {
-		return errors.WithMessage(err, "error while listing vault policies")
+		return err
 	}
 
-	p.log.Infof("found %d role config maps and existing policies", len(allConfigMapData), existingPolicies)
+	p.log.Debugf("found %d role config maps", len(allConfigMapData))
 	for _, cmData := range allConfigMapData {
-		roleName := cmData["roleName"]
-		policyNames := cmData["policyNames"]
-		servieAccounts := cmData["servieAccounts"]
-		servieAccountNameSpaces := cmData["servieAccountNameSpaces"]
-
+		roleName := cmData.Data["roleName"]
+		policyNames := cmData.Data["policyNames"]
+		servieAccounts := cmData.Data["servieAccounts"]
+		servieAccountNameSpaces := cmData.Data["servieAccountNameSpaces"]
 		policyNameList := strings.Split(policyNames, ",")
+
+		cmKey := fmt.Sprintf("%s:%s", cmData.Name, cmData.Namespace)
 		policiesExist := true
 		for _, policyName := range policyNameList {
 			found := false
@@ -108,11 +134,29 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 			continue
 		}
 
-		err = vc.CreateOrUpdateRole(roleName, policyNameList,
-			strings.Split(servieAccounts, ","),
-			strings.Split(servieAccountNameSpaces, ","))
-		if err != nil {
-			return errors.WithMessagef(err, "error while creating vault role %s, %v", roleName, cmData)
+		existingCmData, found := p.roleConfigCache.Get(cmKey)
+		if found {
+			if existingCmData.LastUpdatedTime != cmData.LastUpdatedTime {
+				err = vc.CreateOrUpdateRole(roleName, policyNameList,
+					strings.Split(servieAccounts, ","),
+					strings.Split(servieAccountNameSpaces, ","))
+				if err != nil {
+					p.log.Errorf("error while updating Vault role %s: %v", roleName, err)
+					continue
+				}
+				p.roleConfigCache.Put(cmKey, cmData)
+			} else {
+				p.log.Debugf("no update needed for vault role %s", roleName)
+			}
+		} else {
+			err = vc.CreateOrUpdateRole(roleName, policyNameList,
+				strings.Split(servieAccounts, ","),
+				strings.Split(servieAccountNameSpaces, ","))
+			if err != nil {
+				p.log.Errorf("error while creating Vault role %s: %v", roleName, err)
+				continue
+			}
+			p.roleConfigCache.Put(cmKey, cmData)
 		}
 	}
 	return nil
