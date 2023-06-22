@@ -38,7 +38,7 @@ func prepareCredentialSecretPath(credentialType, credEntityName, credIdentifier 
 }
 
 func (v *VaultCredServ) GetCred(ctx context.Context, request *vaultcredpb.GetCredRequest) (*vaultcredpb.GetCredResponse, error) {
-	vc, err := client.NewVaultClientForServiceAccount(ctx, v.conf, request.VaultRole, request.ServiceAccountToken)
+	vc, err := client.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initiize vault client")
 	}
@@ -54,7 +54,7 @@ func (v *VaultCredServ) GetCred(ctx context.Context, request *vaultcredpb.GetCre
 }
 
 func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCredRequest) (*vaultcredpb.PutCredResponse, error) {
-	vc, err := client.NewVaultClientForServiceAccount(ctx, v.conf, request.VaultRole, request.ServiceAccountToken)
+	vc, err := client.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initiize vault client")
 	}
@@ -70,7 +70,7 @@ func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCre
 }
 
 func (v *VaultCredServ) DeleteCred(ctx context.Context, request *vaultcredpb.DeleteCredRequest) (*vaultcredpb.DeleteCredResponse, error) {
-	vc, err := client.NewVaultClientForServiceAccount(ctx, v.conf, request.VaultRole, request.ServiceAccountToken)
+	vc, err := client.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
 	if err != nil {
 		return nil, err
 	}

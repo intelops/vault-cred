@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/kube-tarian/kad/vaultserv
+  repository: ghcr.io/intelops/vault-cred
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
@@ -40,18 +40,76 @@ service:
   type: ClusterIP
   port: 8080
 
+env:
+  logLevel: info
+
 vault:
   vaultAddress: https://vault:8200
-  vaultCACertPath: /var/certs/ca.pem
-  vaultTokenPath: /etc/vault/root-token
-  vaultUnSealKeysPath: /etc/vault/
-  vaultReadTimeout: 60s
+  secretName: vault-server
+  secretNamespace: default
+  secretTokenKeyName: roottoken
+  secretUnSealKeyPrefix: unsealkey
+  vaultReadTimeout: "60s"
   vaultMaxRetries: 5
-  secretName: vault-secret
-  vaultMountPath: /etc/vault
-  unSealKeyNames: unsealkey1,unsealkey2,unsealkey3
   vaultSealWatchInterval: "@every 30s"
   vaultPolicyWatchInterval: "@every 1m"
+
+vaultPolicies:
+  - name: vault-policy-service-cred-read
+    data:
+      policyName: vault-policy-service-cred-read
+      policyData: |
+        path "secret/service-cred/*" {
+          capabilities = ["read"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+  - name: vault-policy-service-cred-admin
+    data:
+      policyName: vault-policy-service-cred-admin
+      policyData: |
+        path "secret/service-cred/*" {
+          capabilities = ["create","read","update","delete","list"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+  - name: vault-policy-certs-read
+    data:
+      policyName: vault-policy-certs-read
+      policyData: |
+        path "secret/certs/*" {
+          capabilities = ["read"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+  - name: vault-policy-certs-admin
+    data:
+      policyName: vault-policy-certs-admin
+      policyData: |
+        path "secret/certs/*" {
+          capabilities = ["create","read","update","delete","list"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+
+vaultRoles:
+#  - name: vault-role-read-all-creds
+#    data:
+#      roleName: "vault-role-read-all"
+#      policyNames: "service-cred-read,certs-read"
+#      servieAccounts: ""
+#      servieAccountNameSpaces: ""
+#  - name: vault-role-admin-all-creds
+#    data:
+#      roleName: "vault-role-admin-all-creds"
+#      policyNames: "service-cred-admin,certs-admin"
+#      servieAccounts: ""
+#      servieAccountNameSpaces: ""
+
 ingress:
   enabled: false
   className: ""

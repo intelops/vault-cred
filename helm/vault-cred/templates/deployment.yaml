@@ -33,29 +33,31 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-            - name: vault-secret
-              mountPath: {{ .Values.vault.vaultMountPath }}
-              readOnly: true
           env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: LOG_LEVEL
+              value: "{{ .Values.env.logLevel }}"
             - name: VAULT_ADDR
-              value: {{ .Values.vault.vaultAddress }}
-            - name: VAULT_CACERT
-              value: {{ .Values.vault.vaultCACertPath }}
-            - name: VAULT_TOKEN_PATH
-              value: {{ .Values.vault.vaultTokenPath }}
-            - name: VAULT_UNSEAL_KEYS_PATH
-              value: { { .Values.vault.vaultUnSealKeysPath } }
-            - name: VAULT_UNSEAL_KEY_NAMES
-              value: { { .Values.vault.unSealKeyNames } }
+              value: "{{ .Values.vault.vaultAddress }}"
+            - name: VAULT_SECRET_NAME
+              value: "{{ .Values.vault.secretName }}"
+            - name: VAULT_SECRET_NAMESPACE
+              value: "{{ .Values.vault.secretNamespace }}"
+            - name: VAULT_SECRET_TOKEN_KEY_NAME
+              value: "{{ .Values.vault.secretTokenKeyName }}"
+            - name: VAULT_SECRET_UNSEAL_KEY_PREFIX
+              value: "{{ .Values.vault.secretUnSealKeyPrefix }}"
             - name: VAULT_READ_TIMEOUT
-              value: {{ .Values.vault.vaultReadTimeout }}
+              value: "{{ .Values.vault.vaultReadTimeout }}"
             - name: VAULT_MAX_RETRIES
-              value: {{ .Values.vault.vaultMaxRetries }}
+              value: "{{ .Values.vault.vaultMaxRetries }}"
             - name: VAULT_SEAL_WATCH_INTERVAL
-              value: { { .Values.vault.vaultSealWatchInterval } }
+              value: "{{ .Values.vault.vaultSealWatchInterval }}"
             - name: VAULT_POLICY_WATCH_INTERVAL
-              value: { { .Values.vault.vaultPolicyWatchInterval } }
+              value: "{{ .Values.vault.vaultPolicyWatchInterval }}"               
           ports:
             - name: http
               containerPort: 9098
