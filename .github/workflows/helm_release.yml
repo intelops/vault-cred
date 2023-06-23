@@ -5,7 +5,7 @@ on:
     paths:
       - 'charts/**'
     branches:
-      - main
+      - helm-release
 jobs:
   release:
     runs-on: ubuntu-latest
