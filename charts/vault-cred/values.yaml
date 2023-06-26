@@ -44,7 +44,7 @@ env:
   logLevel: info
 
 vault:
-  vaultAddress: https://vault:8200
+  vaultAddress: http://vault:8200
   secretName: vault-server
   secretNamespace: default
   secretTokenKeyName: roottoken
@@ -59,7 +59,7 @@ vaultPolicies:
     data:
       policyName: vault-policy-service-cred-read
       policyData: |
-        path "secret/service-cred/*" {
+        path "secret/data/service-cred/*" {
           capabilities = ["read"]
         }
         path "auth/kubernetes/login" {
@@ -69,7 +69,7 @@ vaultPolicies:
     data:
       policyName: vault-policy-service-cred-admin
       policyData: |
-        path "secret/service-cred/*" {
+        path "secret/data/service-cred/*" {
           capabilities = ["create","read","update","delete","list"]
         }
         path "auth/kubernetes/login" {
@@ -79,7 +79,7 @@ vaultPolicies:
     data:
       policyName: vault-policy-certs-read
       policyData: |
-        path "secret/certs/*" {
+        path "secret/data/certs/*" {
           capabilities = ["read"]
         }
         path "auth/kubernetes/login" {
@@ -89,7 +89,7 @@ vaultPolicies:
     data:
       policyName: vault-policy-certs-admin
       policyData: |
-        path "secret/certs/*" {
+        path "secret/data/certs/*" {
           capabilities = ["create","read","update","delete","list"]
         }
         path "auth/kubernetes/login" {

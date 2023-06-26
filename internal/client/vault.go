@@ -47,6 +47,11 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 		return nil, err
 	}
 
+	if len(conf.VaultToken) != 0 {
+		vc.c.SetToken(conf.VaultToken)
+		return vc, nil
+	}
+
 	k8s, err := NewK8SClient(vc.log)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing k8s client")
