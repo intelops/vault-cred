@@ -7,20 +7,18 @@ import (
 	"strings"
 
 	"github.com/intelops/go-common/logging"
-	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/pkg/errors"
 )
 
 type VaultPolicyHandler struct {
 	log               logging.Logger
-	conf              config.VaultEnv
 	policyConfigCache vaultConfigData
 	roleConfigCache   vaultConfigData
 }
 
-func NewVaultPolicyHandler(log logging.Logger, conf config.VaultEnv) *VaultPolicyHandler {
-	return &VaultPolicyHandler{log: log, conf: conf,
+func NewVaultPolicyHandler(log logging.Logger) *VaultPolicyHandler {
+	return &VaultPolicyHandler{log: log,
 		policyConfigCache: newVaultConfigMapCache(),
 		roleConfigCache:   newVaultConfigMapCache()}
 }
@@ -38,12 +36,7 @@ func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix stri
 	return allConfigMapData, nil
 }
 
-func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
-	vc, err := client.NewVaultClientForVaultToken(p.log, p.conf)
-	if err != nil {
-		return err
-	}
-
+func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context, vc *client.VaultClient) error {
 	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-policy-")
 	if err != nil {
 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
@@ -79,20 +72,15 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context) error {
 	return nil
 }
 
-func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
+func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context, vc *client.VaultClient) error {
 	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-role-")
 	if err != nil {
 		return errors.WithMessagef(err, "error while getting vault role configmaps")
 	}
 
 	if len(allConfigMapData) == 0 {
-		p.log.Debugf("%d vault roles found to configure")
+		p.log.Debugf("no vault roles found")
 		return nil
-	}
-
-	vc, err := client.NewVaultClientForVaultToken(p.log, p.conf)
-	if err != nil {
-		return err
 	}
 
 	err = vc.CheckAndEnableK8sAuth()
@@ -137,9 +125,10 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 		existingCmData, found := p.roleConfigCache.Get(cmKey)
 		if found {
 			if existingCmData.LastUpdatedTime != cmData.LastUpdatedTime {
-				err = vc.CreateOrUpdateRole(roleName, policyNameList,
+				err = vc.CreateOrUpdateRole(roleName,
 					strings.Split(servieAccounts, ","),
-					strings.Split(servieAccountNameSpaces, ","))
+					strings.Split(servieAccountNameSpaces, ","),
+					policyNameList)
 				if err != nil {
 					p.log.Errorf("error while updating Vault role %s: %v", roleName, err)
 					continue
@@ -149,9 +138,10 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 				p.log.Debugf("no update needed for vault role %s", roleName)
 			}
 		} else {
-			err = vc.CreateOrUpdateRole(roleName, policyNameList,
+			err = vc.CreateOrUpdateRole(roleName,
 				strings.Split(servieAccounts, ","),
-				strings.Split(servieAccountNameSpaces, ","))
+				strings.Split(servieAccountNameSpaces, ","),
+				policyNameList)
 			if err != nil {
 				p.log.Errorf("error while creating Vault role %s: %v", roleName, err)
 				continue
@@ -160,4 +150,8 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (p *VaultPolicyHandler) EnsureKVMounted(ctx context.Context, vc *client.VaultClient) error {
+	return vc.CheckAndMountKVMount("secret/")
 }
