@@ -52,6 +52,7 @@ vault:
   vaultMaxRetries: 5
   vaultSealWatchInterval: "@every 30s"
   vaultPolicyWatchInterval: "@every 1m"
+  vaultCredSyncInterval: "@every 1m"
 
 vaultPolicies:
   - name: vault-policy-service-cred-read

@@ -86,5 +86,17 @@ func initScheduler(log logging.Logger, cfg config.Configuration) (s *job.Schedul
 			log.Fatal("failed to add policy watcher job", err)
 		}
 	}
+
+	if cfg.VaultCredSyncInterval != "" {
+		pj, err := job.NewVaultCredSync(log, cfg.VaultCredSyncInterval)
+		if err != nil {
+			log.Fatal("failed to init cred sync job", err)
+		}
+
+		err = s.AddJob("vault-cred-sync", pj)
+		if err != nil {
+			log.Fatal("failed to add cred sync job", err)
+		}
+	}
 	return
 }

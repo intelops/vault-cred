@@ -11,6 +11,7 @@ type Configuration struct {
 	Port                     int    `envconfig:"PORT" default:"9098"`
 	VaultSealWatchInterval   string `envconfig:"VAULT_SEAL_WATCH_INTERVAL"`
 	VaultPolicyWatchInterval string `envconfig:"VAULT_POLICY_WATCH_INTERVAL"`
+	VaultCredSyncInterval    string `envconfig:"VAULT_CRED_SYNC_INTERVAL"`
 }
 
 type VaultEnv struct {
@@ -24,6 +25,7 @@ type VaultEnv struct {
 	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"root-token"`
 	VaultSecretUnSealKeyPrefix string        `envconfig:"VAULT_SECRET_UNSEAL_KEY_PREFIX" default:"unsealkey"`
 	VaultToken                 string        `envconfig:"VAULT_TOKEN"`
+	VaultCredSyncSecretName    string        `envconfig:"VAULT_CRED_SYNC_SECRET_NAME" default:"vault-cred-sync-data"`
 }
 
 func FetchConfiguration() (Configuration, error) {
