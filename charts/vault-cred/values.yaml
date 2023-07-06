@@ -46,7 +46,6 @@ env:
 vault:
   vaultAddress: http://vault:8200
   secretName: vault-server
-  secretNamespace: default
   secretTokenKeyName: roottoken
   secretUnSealKeyPrefix: unsealkey
   vaultReadTimeout: "60s"

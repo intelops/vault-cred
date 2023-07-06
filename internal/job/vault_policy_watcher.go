@@ -2,11 +2,15 @@ package job
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/client"
+	"github.com/intelops/vault-cred/internal/job/agentpb"
 	"github.com/intelops/vault-cred/internal/policy"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type VaultPolicyWatcher struct {
@@ -53,4 +57,26 @@ func (v *VaultPolicyWatcher) Run() {
 	if err := v.handler.UpdateVaultRoles(ctx, vc); err != nil {
 		v.log.Errorf("failed to update roles, %v", err)
 	}
+
+	testInsertCredWithAgent()
+}
+
+func testInsertCredWithAgent() {
+	conn, err := grpc.Dial("kad-agent:8080",
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Println("connect error: ", err)
+		return
+	}
+	agentClient := agentpb.NewAgentClient(conn)
+	_, err = agentClient.StoreCred(context.Background(), &agentpb.StoreCredRequest{
+		Credname: "vitess2",
+		Username: "user2",
+		Password: "password2",
+	})
+	if err != nil {
+		fmt.Println("store error: ", err)
+		return
+	}
+	fmt.Println("successful: ", err)
 }
