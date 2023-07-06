@@ -29,11 +29,11 @@ func NewVaultCredServ(log logging.Logger) (*VaultCredServ, error) {
 	}, nil
 }
 
-func credentialMountPath() string {
+func CredentialMountPath() string {
 	return "secret"
 }
 
-func prepareCredentialSecretPath(credentialType, credEntityName, credIdentifier string) string {
+func PrepareCredentialSecretPath(credentialType, credEntityName, credIdentifier string) string {
 	return fmt.Sprintf("%s/%s/%s", credentialType, credEntityName, credIdentifier)
 }
 
@@ -43,8 +43,8 @@ func (v *VaultCredServ) GetCred(ctx context.Context, request *vaultcredpb.GetCre
 		return nil, errors.WithMessage(err, "failed to initiize vault client")
 	}
 
-	secretPath := prepareCredentialSecretPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
-	credentail, err := vc.GetCredential(ctx, credentialMountPath(), secretPath)
+	secretPath := PrepareCredentialSecretPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
+	credentail, err := vc.GetCredential(ctx, CredentialMountPath(), secretPath)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to get credential")
 	}
@@ -59,8 +59,8 @@ func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCre
 		return nil, errors.WithMessage(err, "failed to initiize vault client")
 	}
 
-	secretPath := prepareCredentialSecretPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
-	err = vc.PutCredential(ctx, credentialMountPath(), secretPath, request.Credential)
+	secretPath := PrepareCredentialSecretPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
+	err = vc.PutCredential(ctx, CredentialMountPath(), secretPath, request.Credential)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to write credential")
 	}
@@ -75,8 +75,8 @@ func (v *VaultCredServ) DeleteCred(ctx context.Context, request *vaultcredpb.Del
 		return nil, err
 	}
 
-	secretPath := prepareCredentialSecretPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
-	err = vc.DeleteCredential(ctx, credentialMountPath(), secretPath)
+	secretPath := PrepareCredentialSecretPath(request.CredentialType, request.CredEntityName, request.CredIdentifier)
+	err = vc.DeleteCredential(ctx, CredentialMountPath(), secretPath)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to delete credential")
 	}
