@@ -87,7 +87,6 @@ func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string)
 
 	k.log.Debugf("Secret %s fetched from namespace %s", secretName, namespace)
 	return secretMap, nil
-
 }
 
 func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) ([]ConfigMapData, error) {

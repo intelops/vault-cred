@@ -55,7 +55,9 @@ spec:
             - name: VAULT_SEAL_WATCH_INTERVAL
               value: "{{ .Values.vault.vaultSealWatchInterval }}"
             - name: VAULT_POLICY_WATCH_INTERVAL
-              value: "{{ .Values.vault.vaultPolicyWatchInterval }}"               
+              value: "{{ .Values.vault.vaultPolicyWatchInterval }}"
+            - name: VAULT_CRED_SYNC_INTERVAL
+              value: "{{ .Values.vault.vaultCredSyncInterval }}"
           ports:
             - name: http
               containerPort: 9098
