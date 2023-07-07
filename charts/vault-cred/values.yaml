@@ -46,13 +46,13 @@ env:
 vault:
   vaultAddress: http://vault:8200
   secretName: vault-server
-  secretNamespace: default
   secretTokenKeyName: roottoken
   secretUnSealKeyPrefix: unsealkey
   vaultReadTimeout: "60s"
   vaultMaxRetries: 5
   vaultSealWatchInterval: "@every 30s"
   vaultPolicyWatchInterval: "@every 1m"
+  vaultCredSyncInterval: "@every 1m"
 
 vaultPolicies:
   - name: vault-policy-service-cred-read

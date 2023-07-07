@@ -1,0 +1,11 @@
+apiVersion: v1
+data:
+  # SERVICE-CRED-<uniquevalue>: `echo {"entityName":"db", "userName":"testuser","password":"testpwd"} | base64 -w 0`
+  SERVICE-CRED-1: e2VudGl0eU5hbWU6ZGIsIHVzZXJOYW1lOnRlc3R1c2VyLHBhc3N3b3JkOnRlc3Rwd2R9Cg==
+  # CERTS-<uniquevalue>: `echo '{"entityName":"customer-client", "certIndetifier":"capten1","caCert":"LS0tLS1CRUdJTiB", "cert": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JS", "key":"LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBL"}' | base64 -w 0`
+  CERTS-1: eyJlbnRpdHlOYW1lIjoiY3VzdG9tZXItY2xpZW50IiwgImNlcnRJbmRldGlmaWVyIjoiY2FwdGVuMSIsImNhQ2VydCI6IkxTMHRMUzFDUlVkSlRpQiIsICJjZXJ0IjogIkxTMHRMUzFDUlVkSlRpQkRSVkpVU1VaSlEwRlVSUzB0TFMwdENrMUpTIiwgImtleSI6IkxTMHRMUzFDUlVkSlRpQlNVMEVnVUZKSlZrRlVSU0JMIn0K
+kind: Secret
+metadata:
+  name: vault-cred-sync-data
+  namespace: "<vault-cred-namespace>"
+type: Opaque
