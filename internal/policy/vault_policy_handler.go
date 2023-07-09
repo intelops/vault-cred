@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/intelops/go-common/logging"
-	"github.com/intelops/vault-cred/internal/client"
+	"github.com/intelops/vault-cred/internal/k8s"
+	"github.com/intelops/vault-cred/internal/vault"
 	"github.com/pkg/errors"
 )
 
@@ -23,8 +24,8 @@ func NewVaultPolicyHandler(log logging.Logger) *VaultPolicyHandler {
 		roleConfigCache:   newVaultConfigMapCache()}
 }
 
-func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix string) ([]client.ConfigMapData, error) {
-	k8s, err := client.NewK8SClient(p.log)
+func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix string) ([]k8s.ConfigMapData, error) {
+	k8s, err := k8s.NewK8SClient(p.log)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func (p *VaultPolicyHandler) getVaultConfigMaps(ctx context.Context, prefix stri
 	return allConfigMapData, nil
 }
 
-func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context, vc *client.VaultClient) error {
+func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context, vc *vault.VaultClient) error {
 	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-policy-")
 	if err != nil {
 		return errors.WithMessagef(err, "error while getting vault policy configmaps")
@@ -72,7 +73,7 @@ func (p *VaultPolicyHandler) UpdateVaultPolicies(ctx context.Context, vc *client
 	return nil
 }
 
-func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context, vc *client.VaultClient) error {
+func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context, vc *vault.VaultClient) error {
 	allConfigMapData, err := p.getVaultConfigMaps(ctx, "vault-role-")
 	if err != nil {
 		return errors.WithMessagef(err, "error while getting vault role configmaps")
@@ -152,6 +153,6 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context, vc *client.Va
 	return nil
 }
 
-func (p *VaultPolicyHandler) EnsureKVMounted(ctx context.Context, vc *client.VaultClient) error {
+func (p *VaultPolicyHandler) EnsureKVMounted(ctx context.Context, vc *vault.VaultClient) error {
 	return vc.CheckAndMountKVMount("secret/")
 }

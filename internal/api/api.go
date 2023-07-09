@@ -6,7 +6,7 @@ import (
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
-	"github.com/intelops/vault-cred/internal/client"
+	"github.com/intelops/vault-cred/internal/vault"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
 	"github.com/pkg/errors"
 )
@@ -38,7 +38,7 @@ func PrepareCredentialSecretPath(credentialType, credEntityName, credIdentifier 
 }
 
 func (v *VaultCredServ) GetCred(ctx context.Context, request *vaultcredpb.GetCredRequest) (*vaultcredpb.GetCredResponse, error) {
-	vc, err := client.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
+	vc, err := vault.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initiize vault client")
 	}
@@ -54,7 +54,7 @@ func (v *VaultCredServ) GetCred(ctx context.Context, request *vaultcredpb.GetCre
 }
 
 func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCredRequest) (*vaultcredpb.PutCredResponse, error) {
-	vc, err := client.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
+	vc, err := vault.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to initiize vault client")
 	}
@@ -70,7 +70,7 @@ func (v *VaultCredServ) PutCred(ctx context.Context, request *vaultcredpb.PutCre
 }
 
 func (v *VaultCredServ) DeleteCred(ctx context.Context, request *vaultcredpb.DeleteCredRequest) (*vaultcredpb.DeleteCredResponse, error) {
-	vc, err := client.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
+	vc, err := vault.NewVaultClientForServiceAccount(ctx, v.log, v.conf)
 	if err != nil {
 		return nil, err
 	}

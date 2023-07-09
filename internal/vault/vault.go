@@ -1,4 +1,4 @@
-package client
+package vault
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	vaultauth "github.com/hashicorp/vault/api/auth/kubernetes"
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
+	"github.com/intelops/vault-cred/internal/k8s"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/metadata"
 )
@@ -52,7 +53,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 		return vc, nil
 	}
 
-	k8s, err := NewK8SClient(vc.log)
+	k8s, err := k8s.NewK8SClient(vc.log)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing k8s client")
 	}

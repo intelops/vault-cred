@@ -1,4 +1,4 @@
-package client
+package vault
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/intelops/vault-cred/internal/k8s"
 	"github.com/pkg/errors"
 )
 
@@ -63,7 +64,7 @@ func (vc *VaultClient) initializeVaultSecret() error {
 	}
 
 	stringData[vc.conf.VaultSecretTokenKeyName] = rootToken
-	k8s, err := NewK8SClient(vc.log)
+	k8s, err := k8s.NewK8SClient(vc.log)
 	if err != nil {
 		return errors.WithMessage(err, "error initializing k8s client")
 	}
@@ -93,7 +94,7 @@ func (vc *VaultClient) generateUnsealKeys() ([]string, string, error) {
 }
 
 func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
-	k8s, err := NewK8SClient(vc.log)
+	k8s, err := k8s.NewK8SClient(vc.log)
 	if err != nil {
 		return "", nil, errors.WithMessage(err, "error initializing k8s client")
 	}

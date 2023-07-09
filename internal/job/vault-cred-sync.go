@@ -8,7 +8,8 @@ import (
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/api"
-	"github.com/intelops/vault-cred/internal/client"
+	"github.com/intelops/vault-cred/internal/k8s"
+	"github.com/intelops/vault-cred/internal/vault"
 	"github.com/pkg/errors"
 )
 
@@ -64,7 +65,7 @@ func (v *VaultCredSync) CronSpec() string {
 func (v *VaultCredSync) Run() {
 	v.log.Debug("started vault credential sync job")
 
-	k8s, err := client.NewK8SClient(v.log)
+	k8s, err := k8s.NewK8SClient(v.log)
 	if err != nil {
 		v.log.Errorf("failed to init k8s client, %s", err)
 		return
@@ -78,7 +79,7 @@ func (v *VaultCredSync) Run() {
 	}
 	v.log.Debugf("found %d secret values to synch", len(secretValues))
 
-	vc, err := client.NewVaultClientForVaultToken(v.log, v.conf)
+	vc, err := vault.NewVaultClientForVaultToken(v.log, v.conf)
 	if err != nil {
 		v.log.Errorf("%s", err)
 		return
@@ -102,7 +103,7 @@ func (v *VaultCredSync) Run() {
 	v.log.Debug("vault credential sync job completed")
 }
 
-func (v *VaultCredSync) storeServiceCredential(ctx context.Context, vc *client.VaultClient, secretIdentifier, secretData string) error {
+func (v *VaultCredSync) storeServiceCredential(ctx context.Context, vc *vault.VaultClient, secretIdentifier, secretData string) error {
 	var serviceCredData ServiceCredentail
 	err := json.Unmarshal([]byte(secretData), &serviceCredData)
 	if err != nil {
@@ -128,7 +129,7 @@ func (v *VaultCredSync) storeServiceCredential(ctx context.Context, vc *client.V
 	return nil
 }
 
-func (v *VaultCredSync) storeCertData(ctx context.Context, vc *client.VaultClient, secretIdentifier, secretData string) error {
+func (v *VaultCredSync) storeCertData(ctx context.Context, vc *vault.VaultClient, secretIdentifier, secretData string) error {
 	var certData CertificateData
 	err := json.Unmarshal([]byte(secretData), &certData)
 	if err != nil {

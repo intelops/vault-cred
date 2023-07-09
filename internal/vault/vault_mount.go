@@ -1,4 +1,4 @@
-package client
+package vault
 
 import (
 	"github.com/hashicorp/vault/api"

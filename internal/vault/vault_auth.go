@@ -1,7 +1,8 @@
-package client
+package vault
 
 import (
 	"github.com/hashicorp/vault/api"
+	"github.com/intelops/vault-cred/internal/k8s"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 )
@@ -60,7 +61,7 @@ func (v *VaultClient) updateK8SAuthConfig() error {
 }
 
 func (v *VaultClient) loadK8SConfigData() (map[string]interface{}, error) {
-	k8s, err := NewK8SClient(v.log)
+	k8s, err := k8s.NewK8SClient(v.log)
 	if err != nil {
 		return nil, errors.WithMessage(err, "error initializing k8s client")
 	}

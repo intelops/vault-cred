@@ -8,6 +8,9 @@ import (
 	"syscall"
 
 	"github.com/intelops/vault-cred/internal/job"
+	"github.com/intelops/vault-cred/internal/k8s"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/workqueue"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
@@ -52,7 +55,7 @@ func Start() {
 
 	s := initScheduler(log, cfg)
 	s.Start()
-
+	startConfigMapChangeHandler(log)
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	<-signals
@@ -99,4 +102,48 @@ func initScheduler(log logging.Logger, cfg config.Configuration) (s *job.Schedul
 		}
 	}
 	return
+}
+
+func startConfigMapChangeHandler(log logging.Logger) {
+	k8sClient, _ := k8s.NewK8SClient(log)
+	workQueue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+
+	addFunc := func(obj interface{}) {
+		configMap := obj.(*v1.ConfigMap)
+		fmt.Printf("ConfigMap added: %s\n", configMap.Name)
+		workQueue.Add(configMap.Name)
+	}
+
+	updateFunc := func(oldObj, newObj interface{}) {
+		newConfigMap := newObj.(*v1.ConfigMap)
+		fmt.Printf("ConfigMap updated: %s\n", newConfigMap.Name)
+		workQueue.Add(newConfigMap.Name)
+	}
+
+	deleteFunc := func(obj interface{}) {
+		configMap := obj.(*v1.ConfigMap)
+		fmt.Printf("ConfigMap deleted: %s\n", configMap.Name)
+		workQueue.Add(configMap.Name)
+	}
+
+	k8sClient.RegisterConfigMapChangeHandler(addFunc, updateFunc, deleteFunc)
+	go k8sClient.StartObjectChangeInformer()
+	go processEvents(workQueue)
+}
+
+func processEvents(workQueue workqueue.RateLimitingInterface) {
+	for {
+		// Retrieve an item from the work queue
+		item, shutdown := workQueue.Get()
+		if shutdown {
+			return
+		}
+
+		// Handle the item (perform your desired actions here)
+		configMapName := item.(string)
+		fmt.Printf("Processing event for ConfigMap: %s\n", configMapName)
+
+		// Mark the item as processed
+		workQueue.Done(item)
+	}
 }
