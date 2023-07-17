@@ -96,6 +96,29 @@ vaultPolicies:
           capabilities = ["create","read","update"]
         }
 
+  - name: vault-policy-cluster-admin
+    data:
+      policyName: vault-policy-cluster-admin
+      policyData: |
+        path "secret/data/cluster/*" {
+          capabilities = ["create","read","update","delete","list"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+
+  - name: vault-policy-cluster-read
+    data:
+      policyName: vault-policy-cluster-read
+      policyData: |
+        path "secret/data/cluster/*" {
+          capabilities = ["read"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+       # two policies to be added....read and write for cluster-read and cluster-admin 
+
 vaultRoles:
 #  - name: vault-role-read-all-creds
 #    data:
