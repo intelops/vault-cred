@@ -185,7 +185,7 @@ func (v *VaultCredSync) storeGenericCredential(ctx context.Context, vc *client.V
 		cred[key] = val
 	}
 
-	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(serviceCredSecretKeyPrefix), genericCredData.EntityName, genericCredData.CertIndentifier)
+	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(genericSecretKeyPrefix), genericCredData.EntityName, genericCredData.CertIndentifier)
 	err = vc.PutCredential(ctx, api.CredentialMountPath(), secretPath, cred)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
