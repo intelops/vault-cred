@@ -40,12 +40,10 @@ type ServiceCredentail struct {
 	AdditionalData map[string]string `json:"additionalData"`
 }
 type GenericCredential struct {
-	CredentialType  string `json:"credentialType"`
-	EntityName      string `json:"entityName"`
-	CredIndentifier string `json:"credIndetifier"`
-	//	ClusterId       string            `json:"clusterId"`
-	//	Token           string            `json:"token"`
-	Credential map[string]string `json:"credential"`
+	CredentialType  string            `json:"credentialType"`
+	EntityName      string            `json:"entityName"`
+	CredIndentifier string            `json:"credIndetifier"`
+	Credential      map[string]string `json:"credential"`
 }
 type VaultCredSync struct {
 	log       logging.Logger
@@ -84,7 +82,7 @@ func (v *VaultCredSync) Run() {
 		v.log.Debugf("failed to read sync secret, %s", err)
 		return
 	}
-	v.log.Debugf("found %d secret values to synch", len(secretValues))
+	v.log.Debugf("found %d secret values to sync", len(secretValues))
 
 	vc, err := client.NewVaultClientForVaultToken(v.log, v.conf)
 	if err != nil {
@@ -111,9 +109,10 @@ func (v *VaultCredSync) Run() {
 				v.log.Errorf("%s", err)
 				continue
 			}
+		} else {
+			v.log.Infof("credentail type %s not supported", key)
 		}
 
-		//  add one more else if for generic credential...
 	}
 	v.log.Debug("vault credential sync job completed")
 }
@@ -140,7 +139,7 @@ func (v *VaultCredSync) storeServiceCredential(ctx context.Context, vc *client.V
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
 	}
-	v.log.Infof("stored sync credential for %s:%s", serviceCredData.EntityName, serviceCredData.UserName)
+	v.log.Infof("stored sync service credential for %s/%s", serviceCredData.EntityName, serviceCredData.UserName)
 	return nil
 }
 
@@ -165,9 +164,10 @@ func (v *VaultCredSync) storeCertData(ctx context.Context, vc *client.VaultClien
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
 	}
-	v.log.Infof("stored sync cert for %s:%s", certData.EntityName, certData.CertIndentifier)
+	v.log.Infof("stored sync cert for %s/%s", certData.EntityName, certData.CertIndentifier)
 	return nil
 }
+
 func (v *VaultCredSync) storeGenericCredential(ctx context.Context, vc *client.VaultClient, secretIdentifier, secretData string) error {
 	var genericCredData GenericCredential
 	err := json.Unmarshal([]byte(secretData), &genericCredData)
@@ -178,9 +178,8 @@ func (v *VaultCredSync) storeGenericCredential(ctx context.Context, vc *client.V
 	if len(genericCredData.EntityName) == 0 || len(genericCredData.CredIndentifier) == 0 || len(genericCredData.CredentialType) == 0 {
 		return errors.WithMessagef(err, "credential attributes are emty for %s secret data", secretIdentifier)
 	}
+
 	cred := map[string]string{}
-	// cred := map[string]string{genericCredentialClusterIdKey: genericCredData.ClusterId,
-	// 	genericCredentialTokenKey: genericCredentialTokenKey}
 	for key, val := range genericCredData.Credential {
 		cred[key] = val
 	}
@@ -190,8 +189,7 @@ func (v *VaultCredSync) storeGenericCredential(ctx context.Context, vc *client.V
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
 	}
-	v.log.Infof("stored sync credential for %s:%s", genericCredData.EntityName, genericCredData.CredIndentifier)
+	v.log.Infof("stored sync credential for %s/%s/%s", strings.ToLower(genericSecretKeyPrefix), genericCredData.EntityName, genericCredData.CredIndentifier)
 	return nil
 
-	//return nil
 }

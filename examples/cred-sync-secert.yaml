@@ -4,12 +4,13 @@ data:
   SERVICE-CRED-1: e2VudGl0eU5hbWU6ZGIsIHVzZXJOYW1lOnRlc3R1c2VyLHBhc3N3b3JkOnRlc3Rwd2R9Cg==
   # CERTS-<uniquevalue>: `echo '{"entityName":"customer-client", "certIndetifier":"capten1","caCert":"LS0tLS1CRUdJTiB", "cert": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JS", "key":"LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBL"}' | base64 -w 0`
   CERTS-1: eyJlbnRpdHlOYW1lIjoiY3VzdG9tZXItY2xpZW50IiwgImNlcnRJbmRldGlmaWVyIjoiY2FwdGVuMSIsImNhQ2VydCI6IkxTMHRMUzFDUlVkSlRpQiIsICJjZXJ0IjogIkxTMHRMUzFDUlVkSlRpQkRSVkpVU1VaSlEwRlVSUzB0TFMwdENrMUpTIiwgImtleSI6IkxTMHRMUzFDUlVkSlRpQlNVMEVnVUZKSlZrRlVSU0JMIn0K
-  #GENERIC-<uniquevalue>: `echo '{"credentialType":"cluster","entityName":"astra", "credIndetifier":"authToken", "clusterId": "b7f1640e-5488-4fc4-9230-10f58e195e1a", "token":"AstraCS:dQOUGyLDrxBsLJUPbdRqzwDs:ce353d87f144c46d740b4889caa840c0325aa0f8bb20eef891c9eefba055132b"}' | base64 -w 0`
-  #GENERIC-1: eyJjcmVkZW50aWFsVHlwZSI6ImNsdXN0ZXIiLCJlbnRpdHlOYW1lIjoiYXN0cmEiLCAiY2VydEluZGV0aWZpZXIiOiJhdXRoVG9rZW4iLCAiY2x1c3RlcklkIjogImI3ZjE2NDBlLTU0ODgtNGZjNC05MjMwLTEwZjU4ZTE5NWUxYSIsICJ0b2tlbiI6IkFzdHJhQ1M6ZFFPVUd5TERyeEJzTEpVUGJkUnF6d0RzOmNlMzUzZDg3ZjE0NGM0NmQ3NDBiNDg4OWNhYTg0MGMwMzI1YWEwZjhiYjIwZWVmODkxYzllZWZiYTA1NTEzMmIifQo=
-  GENERIC-1: eyJjcmVkZW50aWFsVHlwZSI6ImNsdXN0ZXIiLCJlbnRpdHlOYW1lIjoiYXN0cmEiLCAiY3JlZEluZGV0aWZpZXIiOiJhdXRoVG9rZW4iLCAiY3JlZGVudGlhbCI6eyJjbHVzdGVySWQiOiAiYjdmMTY0MGUtNTQ4OC00ZmM0LTkyMzAtMTBmNThlMTk1ZTFhIiwgInRva2VuIjoiQXN0cmFDUzpkUU9VR3lMRHJ4QnNMSlVQYmRScXp3RHM6Y2UzNTNkODdmMTQ0YzQ2ZDc0MGI0ODg5Y2FhODQwYzAzMjVhYTBmOGJiMjBlZWY4OTFjOWVlZmJhMDU1MTMyYiJ9fQo=
+
+ #GENERIC-1: `echo '{"credentialType":"cluster","entityName":"astra", "credIndetifier":"authToken", "credential":{"clusterId": "b7f1640e-5488-4fc4-9230-10f58e195e1a","token":"AstraCS:dQOUGyLDrxBsLJUPbdRqzwDs:ce353d87f144c46d740b4889caa840c0325aa0f8bb20eef891c9eefba055132b"}}' | base64 -w 0`
+  GENERIC-1: eyJjcmVkZW50aWFsVHlwZSI6ImNsdXN0ZXIiLCJlbnRpdHlOYW1lIjoiYXN0cmEiLCAiY3JlZEluZGV0aWZpZXIiOiJhdXRoVG9rZW4iLCAiY3JlZGVudGlhbCI6eyJjbHVzdGVySWQiOiAiYjdmMTY0MGUtNTQ4OC00ZmM0LTkyMzAtMTBmNThlMTk1ZTFhIiwidG9rZW4iOiJBc3RyYUNTOmRRT1VHeUxEcnhCc0xKVVBiZFJxendEczpjZTM1M2Q4N2YxNDRjNDZkNzQwYjQ4ODljYWE4NDBjMDMyNWFhMGY4YmIyMGVlZjg5MWM5ZWVmYmEwNTUxMzJiIn19Cg==
+
 kind: Secret
 metadata:
-  name: vault-cred-sync-data1
+  name: vault-cred-sync-data
   namespace: "ml-server"
 type: Opaque
 # 
