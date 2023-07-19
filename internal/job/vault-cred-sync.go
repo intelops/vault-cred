@@ -40,12 +40,12 @@ type ServiceCredentail struct {
 	AdditionalData map[string]string `json:"additionalData"`
 }
 type GenericCredential struct {
-	CredentialType  string            `json:"credentialType"`
-	EntityName      string            `json:"entityName"`
-	CertIndentifier string            `json:"certIndetifier"`
-	ClusterId       string            `json:"clusterId"`
-	Token           string            `json:"token"`
-	Data            map[string]string `json:"additionalData"`
+	CredentialType  string `json:"credentialType"`
+	EntityName      string `json:"entityName"`
+	CredIndentifier string `json:"credIndetifier"`
+	//	ClusterId       string            `json:"clusterId"`
+	//	Token           string            `json:"token"`
+	Credential map[string]string `json:"credential"`
 }
 type VaultCredSync struct {
 	log       logging.Logger
@@ -175,22 +175,22 @@ func (v *VaultCredSync) storeGenericCredential(ctx context.Context, vc *client.V
 		return errors.WithMessagef(err, "failed to parse %s secret data", secretIdentifier)
 	}
 
-	if len(genericCredData.EntityName) == 0 || len(genericCredData.CertIndentifier) == 0 || len(genericCredData.CredentialType) == 0 {
+	if len(genericCredData.EntityName) == 0 || len(genericCredData.CredIndentifier) == 0 || len(genericCredData.CredentialType) == 0 {
 		return errors.WithMessagef(err, "credential attributes are emty for %s secret data", secretIdentifier)
 	}
-
-	cred := map[string]string{genericCredentialClusterIdKey: genericCredData.ClusterId,
-		genericCredentialTokenKey: genericCredentialTokenKey}
-	for key, val := range genericCredData.Data {
+	cred := map[string]string{}
+	// cred := map[string]string{genericCredentialClusterIdKey: genericCredData.ClusterId,
+	// 	genericCredentialTokenKey: genericCredentialTokenKey}
+	for key, val := range genericCredData.Credential {
 		cred[key] = val
 	}
 
-	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(genericSecretKeyPrefix), genericCredData.EntityName, genericCredData.CertIndentifier)
+	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(genericSecretKeyPrefix), genericCredData.EntityName, genericCredData.CredIndentifier)
 	err = vc.PutCredential(ctx, api.CredentialMountPath(), secretPath, cred)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
 	}
-	v.log.Infof("stored sync credential for %s:%s", genericCredData.EntityName, genericCredData.CertIndentifier)
+	v.log.Infof("stored sync credential for %s:%s", genericCredData.EntityName, genericCredData.CredIndentifier)
 	return nil
 
 	//return nil
