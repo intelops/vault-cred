@@ -19,8 +19,8 @@ const (
 	caDataKey                     = "ca.pem"
 	certDataKey                   = "cert.crt"
 	keyDataKey                    = "key.key"
-	genericCredentialClusterIdKey = "clusterId"
-	genericCredentialTokenKey     = "token"
+//	genericCredentialClusterIdKey = "clusterId"
+//	genericCredentialTokenKey     = "token"
 	serviceCredentialUserNameKey  = "userName"
 	serviceCredentialPasswordKey  = "password"
 )
