@@ -100,7 +100,7 @@ vaultPolicies:
     data:
       policyName: vault-policy-cluster-admin
       policyData: |
-        path "secret/data/generic/*" {
+        path "secret/data/cluster-cred/*" {
           capabilities = ["create","read","update","delete","list"]
         }
         path "auth/kubernetes/login" {
@@ -111,7 +111,7 @@ vaultPolicies:
     data:
       policyName: vault-policy-cluster-read
       policyData: |
-        path "secret/data/generic/*" {
+        path "secret/data/cluster-cred/*" {
           capabilities = ["read"]
         }
         path "auth/kubernetes/login" {

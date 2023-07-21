@@ -13,16 +13,16 @@ import (
 )
 
 const (
-	serviceCredSecretKeyPrefix    = "SERVICE-CRED"
-	certSecretKeyPrefix           = "CERTS"
-	genericSecretKeyPrefix        = "GENERIC"
-	caDataKey                     = "ca.pem"
-	certDataKey                   = "cert.crt"
-	keyDataKey                    = "key.key"
-//	genericCredentialClusterIdKey = "clusterId"
-//	genericCredentialTokenKey     = "token"
-	serviceCredentialUserNameKey  = "userName"
-	serviceCredentialPasswordKey  = "password"
+	serviceCredSecretKeyPrefix = "SERVICE-CRED"
+	certSecretKeyPrefix        = "CERTS"
+	genericSecretKeyPrefix     = "CLUSTER-CRED"
+	caDataKey                  = "ca.pem"
+	certDataKey                = "cert.crt"
+	keyDataKey                 = "key.key"
+	//	genericCredentialClusterIdKey = "clusterId"
+	//	genericCredentialTokenKey     = "token"
+	serviceCredentialUserNameKey = "userName"
+	serviceCredentialPasswordKey = "password"
 )
 
 type CertificateData struct {
