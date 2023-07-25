@@ -13,16 +13,14 @@ import (
 )
 
 const (
-	serviceCredSecretKeyPrefix    = "SERVICE-CRED"
-	certSecretKeyPrefix           = "CERTS"
-	genericSecretKeyPrefix        = "GENERIC"
-	caDataKey                     = "ca.pem"
-	certDataKey                   = "cert.crt"
-	keyDataKey                    = "key.key"
-	genericCredentialClusterIdKey = "clusterId"
-	genericCredentialTokenKey     = "token"
-	serviceCredentialUserNameKey  = "userName"
-	serviceCredentialPasswordKey  = "password"
+	serviceCredSecretKeyPrefix   = "SERVICE-CRED"
+	certSecretKeyPrefix          = "CERTS"
+	genericSecretKeyPrefix       = "GENERIC"
+	caDataKey                    = "ca.pem"
+	certDataKey                  = "cert.crt"
+	keyDataKey                   = "key.key"
+	serviceCredentialUserNameKey = "userName"
+	serviceCredentialPasswordKey = "password"
 )
 
 type CertificateData struct {
@@ -184,12 +182,12 @@ func (v *VaultCredSync) storeGenericCredential(ctx context.Context, vc *client.V
 		cred[key] = val
 	}
 
-	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(genericSecretKeyPrefix), genericCredData.EntityName, genericCredData.CredIndentifier)
+	secretPath := api.PrepareCredentialSecretPath(genericCredData.CredentialType, genericCredData.EntityName, genericCredData.CredIndentifier)
 	err = vc.PutCredential(ctx, api.CredentialMountPath(), secretPath, cred)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
 	}
-	v.log.Infof("stored sync credential for %s/%s/%s", strings.ToLower(genericSecretKeyPrefix), genericCredData.EntityName, genericCredData.CredIndentifier)
+	v.log.Infof("stored sync credential for %s/%s/%s", genericCredData.CredentialType, genericCredData.EntityName, genericCredData.CredIndentifier)
 	return nil
 
 }
