@@ -92,24 +92,24 @@ vaultPolicies:
         path "secret/data/certs/*" {
           capabilities = ["create","read","update","delete","list"]
         }
-        path "auth/kubernetes/login" {
+        path "auth/kubernetes/login" d{
           capabilities = ["create","read","update"]
         }
-  - name: vault-policy-cluster-admin
+  - name: vault-policy-generic-cred-admin
     data:
       policyName: vault-policy-cluster-admin
       policyData: |
-        path "secret/data/cluster/*" {
+        path "secret/data/generic/*" {
           capabilities = ["create","read","update","delete","list"]
         }
         path "auth/kubernetes/login" {
           capabilities = ["create","read","update"]
         }
-  - name: vault-policy-cluster-read
+  - name: vault-policy-generic-cred-read
     data:
-      policyName: vault-policy-cluster-read
+      policyName: vault-policy-generic-cred-read
       policyData: |
-        path "secret/data/cluster/*" {
+        path "secret/data/generic/*" {
           capabilities = ["read"]
         }
         path "auth/kubernetes/login" {
