@@ -26,6 +26,11 @@ type ConfigMapData struct {
 	LastUpdatedTime time.Time
 }
 
+type SecretData struct {
+	Data            map[string]string
+	LastUpdatedTime time.Time
+}
+
 func NewK8SClient(log logging.Logger) (*K8SClient, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -70,13 +75,17 @@ func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namesp
 	return nil
 }
 
-func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string) (map[string]string, error) {
+func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string) (*SecretData, error) {
 	secData, err := k.client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return nil, errors.New("secret not found")
 		}
 		return nil, errors.WithMessage(err, "error in creating vault secret")
+	}
+	lastUpdatedTime, err := time.Parse(time.RFC3339, secData.ObjectMeta.CreationTimestamp.Format(time.RFC3339))
+	if err != nil {
+		return nil, errors.New("secret date is not valid")
 	}
 
 	secretMap := make(map[string]string)
@@ -86,7 +95,7 @@ func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string)
 	}
 
 	k.log.Debugf("Secret %s fetched from namespace %s", secretName, namespace)
-	return secretMap, nil
+	return &SecretData{Data: secretMap, LastUpdatedTime: lastUpdatedTime}, nil
 }
 
 func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) ([]ConfigMapData, error) {

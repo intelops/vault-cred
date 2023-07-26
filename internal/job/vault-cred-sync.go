@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
@@ -44,9 +45,10 @@ type GenericCredential struct {
 	Credential      map[string]string `json:"credential"`
 }
 type VaultCredSync struct {
-	log       logging.Logger
-	conf      config.VaultEnv
-	frequency string
+	log             logging.Logger
+	conf            config.VaultEnv
+	frequency       string
+	lastUpdatedTime *time.Time
 }
 
 func NewVaultCredSync(log logging.Logger, frequency string) (*VaultCredSync, error) {
@@ -80,7 +82,14 @@ func (v *VaultCredSync) Run() {
 		v.log.Debugf("failed to read sync secret, %s", err)
 		return
 	}
-	v.log.Debugf("found %d secret values to sync", len(secretValues))
+	v.log.Debugf("found %d secret values to sync", len(secretValues.Data))
+
+	if v.lastUpdatedTime != nil {
+		if v.lastUpdatedTime.Equal(secretValues.LastUpdatedTime) {
+			v.log.Debugf("no change in secret")
+			return
+		}
+	}
 
 	vc, err := client.NewVaultClientForVaultToken(v.log, v.conf)
 	if err != nil {
@@ -88,7 +97,7 @@ func (v *VaultCredSync) Run() {
 		return
 	}
 
-	for key, secretValue := range secretValues {
+	for key, secretValue := range secretValues.Data {
 		if strings.HasPrefix(key, serviceCredSecretKeyPrefix) {
 			err = v.storeServiceCredential(ctx, vc, key, secretValue)
 			if err != nil {
@@ -110,8 +119,10 @@ func (v *VaultCredSync) Run() {
 		} else {
 			v.log.Infof("credentail type %s not supported", key)
 		}
-
 	}
+
+	updateTime := secretValues.LastUpdatedTime.Add(0)
+	v.lastUpdatedTime = &updateTime
 	v.log.Debug("vault credential sync job completed")
 }
 
