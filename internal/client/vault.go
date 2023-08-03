@@ -61,7 +61,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 		return nil, errors.WithMessage(err, "error fetching vault secret")
 	}
 
-	rootToken := vaultSec[vc.conf.VaultSecretTokenKeyName]
+	rootToken := vaultSec.Data[vc.conf.VaultSecretTokenKeyName]
 	if len(rootToken) == 0 {
 		return nil, errors.New("vault root token not found")
 	}

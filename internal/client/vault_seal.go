@@ -107,10 +107,10 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 		return "", nil, errors.WithMessage(err, "error fetching vault secret")
 	}
 
-	vc.log.Debugf("found %d vault secret values", len(vaultSec))
+	vc.log.Debugf("found %d vault secret values", len(vaultSec.Data))
 	unsealKeys := []string{}
 	var rootToken string
-	for key, val := range vaultSec {
+	for key, val := range vaultSec.Data {
 		if strings.HasPrefix(key, vc.conf.VaultSecretUnSealKeyPrefix) {
 			unsealKeys = append(unsealKeys, val)
 			continue
