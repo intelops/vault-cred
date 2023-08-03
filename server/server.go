@@ -55,15 +55,15 @@ func Start() {
 		}
 	}()
 
-	s := initScheduler(log, cfg)
-	s.Start()
+	//s := initScheduler(log, cfg)
+	//s.Start()
     startConfigMapChangeHandler(log)
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	<-signals
 	
 
-	s.Stop()
+	//s.Stop()
 	grpcServer.Stop()
 	log.Debug("exiting vault-cred server")
 }
