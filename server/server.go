@@ -12,7 +12,6 @@ import (
 
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/internal/job"
-	
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
@@ -57,11 +56,10 @@ func Start() {
 
 	//s := initScheduler(log, cfg)
 	//s.Start()
-    startConfigMapChangeHandler(log)
+	startConfigMapChangeHandler(log)
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 	<-signals
-	
 
 	//s.Stop()
 	grpcServer.Stop()
@@ -107,7 +105,14 @@ func initScheduler(log logging.Logger, cfg config.Configuration) (s *job.Schedul
 	return
 }
 func startConfigMapChangeHandler(log logging.Logger) {
-	k8sClient,_:=client.NewK8SClient(log)
+	k8sClient, err := client.NewK8SClient(log)
+	if k8sClient == nil {
+		log.Errorf("K8sClient", k8sClient)
+	}
+
+	if err != nil {
+		log.Errorf("Error while connecting to k8s", k8sClient)
+	}
 	//k8sClient, _ := k8s.NewK8SClient(log)
 	workQueue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
 
