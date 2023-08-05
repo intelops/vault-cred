@@ -1,4 +1,5 @@
-![VAULT-CRED](.readme_assets/Vault-Cred.png)
+![VAULT-CRED](.readme_assets/Vault-Cred.png)   
+
 The open source platform for read,write and delete credentials on vault server.
 
 [![Docker Image CI](https://github.com/intelops/vault-cred/actions/workflows/docker-image.yaml/badge.svg)](https://github.com/intelops/vault-cred/actions/workflows/docker-image.yaml)
