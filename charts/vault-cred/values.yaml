@@ -97,7 +97,7 @@ vaultPolicies:
         }
   - name: vault-policy-generic-cred-admin
     data:
-      policyName: vault-policy-cluster-admin
+      policyName: vault-policy-generic-cred-admin
       policyData: |
         path "secret/data/generic/*" {
           capabilities = ["create","read","update","delete","list"]
