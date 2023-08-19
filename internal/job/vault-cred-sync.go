@@ -33,10 +33,11 @@ type CertificateData struct {
 }
 
 type ServiceCredentail struct {
-	EntityName     string            `json:"entityName"`
-	UserName       string            `json:"userName"`
-	Password       string            `json:"password"`
-	AdditionalData map[string]string `json:"additionalData"`
+	EntityName      string            `json:"entityName"`
+	CredIndentifier string            `json:"credIndetifier"`
+	UserName        string            `json:"userName"`
+	Password        string            `json:"password"`
+	AdditionalData  map[string]string `json:"additionalData"`
 }
 type GenericCredential struct {
 	CredentialType  string            `json:"credentialType"`
@@ -137,7 +138,7 @@ func (v *VaultCredSync) storeServiceCredential(ctx context.Context, vc *client.V
 		return errors.WithMessagef(err, "credential attributes are emty for %s secret data", secretIdentifier)
 	}
 
-	cred := map[string]string{serviceCredentialUserNameKey: serviceCredData.UserName,
+	cred := map[string]string{serviceCredentialUserNameKey: serviceCredData.CredIndentifier,
 		serviceCredentialPasswordKey: serviceCredData.Password}
 	for key, val := range serviceCredData.AdditionalData {
 		cred[key] = val
