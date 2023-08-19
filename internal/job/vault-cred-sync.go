@@ -138,18 +138,18 @@ func (v *VaultCredSync) storeServiceCredential(ctx context.Context, vc *client.V
 		return errors.WithMessagef(err, "credential attributes are emty for %s secret data", secretIdentifier)
 	}
 
-	cred := map[string]string{serviceCredentialUserNameKey: serviceCredData.CredIndentifier,
+	cred := map[string]string{serviceCredentialUserNameKey: serviceCredData.UserName,
 		serviceCredentialPasswordKey: serviceCredData.Password}
 	for key, val := range serviceCredData.AdditionalData {
 		cred[key] = val
 	}
 
-	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(serviceCredSecretKeyPrefix), serviceCredData.EntityName, serviceCredData.UserName)
+	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(serviceCredSecretKeyPrefix), serviceCredData.EntityName, serviceCredData.CredIndentifier)
 	err = vc.PutCredential(ctx, api.CredentialMountPath(), secretPath, cred)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
 	}
-	v.log.Infof("stored sync service credential for %s/%s", serviceCredData.EntityName, serviceCredData.UserName)
+	v.log.Infof("stored sync service credential for %s/%s", serviceCredData.EntityName, serviceCredData.CredIndentifier)
 	return nil
 }
 
