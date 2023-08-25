@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 	"time"
-
+	"k8s.io/client-go/tools/cache"
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -12,11 +12,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/informers"
 )
 
 type K8SClient struct {
 	client *kubernetes.Clientset
 	log    logging.Logger
+	configMapInformer cache.SharedIndexInformer
+	informerFactory   informers.SharedInformerFactory
 }
 
 type ConfigMapData struct {

@@ -190,6 +190,7 @@ func (v *VaultCredSync) storeGenericCredential(ctx context.Context, vc *client.V
 	}
 
 	cred := map[string]string{}
+
 	for key, val := range genericCredData.Credential {
 		cred[key] = val
 	}
