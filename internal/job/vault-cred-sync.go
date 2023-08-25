@@ -33,10 +33,11 @@ type CertificateData struct {
 }
 
 type ServiceCredentail struct {
-	EntityName     string            `json:"entityName"`
-	UserName       string            `json:"userName"`
-	Password       string            `json:"password"`
-	AdditionalData map[string]string `json:"additionalData"`
+	EntityName      string            `json:"entityName"`
+	CredIndentifier string            `json:"credIndetifier"`
+	UserName        string            `json:"userName"`
+	Password        string            `json:"password"`
+	AdditionalData  map[string]string `json:"additionalData"`
 }
 type GenericCredential struct {
 	CredentialType  string            `json:"credentialType"`
@@ -143,12 +144,12 @@ func (v *VaultCredSync) storeServiceCredential(ctx context.Context, vc *client.V
 		cred[key] = val
 	}
 
-	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(serviceCredSecretKeyPrefix), serviceCredData.EntityName, serviceCredData.UserName)
+	secretPath := api.PrepareCredentialSecretPath(strings.ToLower(serviceCredSecretKeyPrefix), serviceCredData.EntityName, serviceCredData.CredIndentifier)
 	err = vc.PutCredential(ctx, api.CredentialMountPath(), secretPath, cred)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to write %s secret data to vault", secretIdentifier)
 	}
-	v.log.Infof("stored sync service credential for %s/%s", serviceCredData.EntityName, serviceCredData.UserName)
+	v.log.Infof("stored sync service credential for %s/%s", serviceCredData.EntityName, serviceCredData.CredIndentifier)
 	return nil
 }
 
