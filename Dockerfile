@@ -1,4 +1,4 @@
-FROM ghcr.io/golang:1.19.4 AS builder
+FROM golang:1.19.4 AS builder
 WORKDIR /workspace
 
 COPY . ./
