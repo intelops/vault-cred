@@ -41,23 +41,24 @@ func (v *VaultSealWatcher) Run() {
 		v.log.Errorf("failed to get vault seal status, %s", err)
 		return
 	}
-	if (v.conf.HAEnabled){
-        v.log.Infof("HA ENABLED",v.conf.HAEnabled)
-		err:=vc.JoinRaftCluster()
-		if (err!=nil){
+	if v.conf.HAEnabled {
+		v.log.Infof("HA ENABLED", v.conf.HAEnabled)
+		err := vc.JoinRaftCluster()
+		if err != nil {
 			v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-			
-		}	
+
+		}
 	}
 
 	if res {
 		v.log.Info("vault is sealed, trying to unseal")
-		if (v.conf.HAEnabled){
+		if v.conf.HAEnabled {
+			v.log.Infof("HA Enabled", v.conf.HAEnabled)
 			err := vc.JoinRaftCluster()
-			if (err!=nil){
+			if err != nil {
 				v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-				
-			}	
+
+			}
 		}
 		err := vc.Unseal()
 		if err != nil {
