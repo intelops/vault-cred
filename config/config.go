@@ -15,6 +15,7 @@ type Configuration struct {
 }
 
 type VaultEnv struct {
+	HAEnabled                  bool          `envconfig:"HA_ENABLED"`
 	Address                    string        `envconfig:"VAULT_ADDR" required:"true"`
 	CACert                     string        `envconfig:"VAULT_CACERT" required:"false"`
 	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`

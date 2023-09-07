@@ -44,6 +44,7 @@ env:
   logLevel: info
 
 vault:
+  haenabled: true
   vaultAddress: http://vault:8200
   secretName: vault-server
   secretTokenKeyName: roottoken
