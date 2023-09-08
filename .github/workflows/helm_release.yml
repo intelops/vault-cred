@@ -17,8 +17,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@@gmail.com"
+          git config user.name "Sheril5"
+          git config user.email "Sheril5@@gmail.com"
 
       - name: Add Helm repos
         run: |
@@ -27,4 +27,4 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.1.0
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_TOKEN: "${{ secrets.token }}"
