@@ -182,12 +182,12 @@ func (vc *VaultClient) JoinRaftCluster() error {
 		vc.log.Debug("Failed to retrieve leader information: %v\n", err)
 
 	}
-	req := api.RaftJoinRequest{
+	req := &api.RaftJoinRequest{
 		Retry: true,
 
 		LeaderAPIAddr: leaderInfo.LeaderAddress,
 	}
 	vc.log.Debug("Leader API address: %s\n", leaderInfo.LeaderAddress)
-	_, err = vc.c.Sys().RaftJoin(&req) // Replace with your leader address
+	_, err = vc.c.Sys().RaftJoin(req) // Replace with your leader address
 	return err
 }
