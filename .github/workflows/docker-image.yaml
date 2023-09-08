@@ -17,7 +17,7 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
-  IMAGE: ${{ github.repository }}
+  IMAGE: Sheril5/vault-cred
 
 jobs:
   build:
@@ -42,8 +42,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: Sheril5
+          password: ${{ secrets.token }}
     
       -
         name: Docker meta
@@ -66,7 +66,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            "GITHUB_TOKEN=${{ secrets.TOKEN }}"
+            "GITHUB_TOKEN=${{ secrets.token }}"
             
       -
         name: Build and push on PR
@@ -78,4 +78,4 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE }}:pr-${{ github.event.pull_request.number }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            "GITHUB_TOKEN=${{ secrets.TOKEN }}"
+            "GITHUB_TOKEN=${{ secrets.token }}"
