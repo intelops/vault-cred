@@ -27,6 +27,7 @@ func (vc *VaultClient) Unseal() error {
 		return nil
 	}
 
+
 	rootToken, unsealKeys, err := vc.getVaultSecretValues()
 	if err != nil {
 		return err
@@ -120,4 +121,77 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 		}
 	}
 	return rootToken, unsealKeys, nil
+}
+
+func (vc *VaultClient)UnsealVaultInstance(svc string, unsealKey string) error {
+	// Create a Vault API client
+	address :=fmt.Sprintf("http://%s:8200", svc)
+	err:=vc.c.SetAddress(address)
+	if (err!=nil){
+		vc.log.Errorf("Error while setting address")
+	}
+    vc.log.Debug("Address",address)	
+
+	// Check if Vault is sealed and unseal if necessary
+
+		// Vault is sealed; unseal it
+		unsealResponse, err :=vc.c.Sys().Unseal(unsealKey)
+		if err != nil {
+			return err
+		}
+
+		if unsealResponse.Sealed {
+			vc.log.Debug("Vault is still sealed after unsealing attempt")
+		}
+	
+	// You can add additional error handling or log responses as needed
+	return nil
+}
+
+
+
+
+
+func (vc *VaultClient) GetVaultSecretValuesforMultiInstance() (string, []string, error) {
+	k8s, err := NewK8SClient(vc.log)
+	if err != nil {
+		return "", nil, errors.WithMessage(err, "error initializing k8s client")
+	}
+
+	vaultSec, err := k8s.GetSecret(context.Background(), vc.conf.VaultSecretName, vc.conf.VaultSecretNameSpace)
+	if err != nil {
+		if strings.Contains(err.Error(), "secret not found") {
+			vc.log.Debugf("secret %d not found", vc.conf.VaultSecretName)
+			return "", nil, nil
+		}
+		return "", nil, errors.WithMessage(err, "error fetching vault secret")
+	}
+
+	vc.log.Debugf("found %d vault secret values", len(vaultSec.Data))
+	unsealKeys := []string{}
+	var rootToken string
+	for key, val := range vaultSec.Data {
+		if strings.HasPrefix(key, vc.conf.VaultSecretUnSealKeyPrefix) {
+			unsealKeys = append(unsealKeys, val)
+			continue
+		}
+		if strings.EqualFold(key, vc.conf.VaultSecretTokenKeyName) {
+			rootToken = val
+		}
+	}
+	return rootToken, unsealKeys, nil
+}
+
+
+func (vc *VaultClient) IsVaultSealedForAllInstances(svc string) (bool, error) {
+	address :=fmt.Sprintf("http://%s:8200", svc)
+	err:=vc.c.SetAddress(address)
+	if (err!=nil){
+		vc.log.Errorf("Error while setting address")
+	}
+	status, err := vc.c.Sys().SealStatus()
+	if err != nil {
+		return false, err
+	}
+	return status.Sealed, nil
 }

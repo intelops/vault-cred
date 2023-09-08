@@ -35,61 +35,88 @@ func (v *VaultSealWatcher) Run() {
 		v.log.Errorf("%s", err)
 		return
 	}
+	servicename := []string{"capten-dev-vault-0", "capten-dev-vault-1", "capten-dev-vault-2"}
+	// res, err := vc.IsVaultSealed()
+	// if err != nil {
+	// 	v.log.Errorf("failed to get vault seal status, %s", err)
+	// 	return
+	// }
 
-	res, err := vc.IsVaultSealed()
-	if err != nil {
-		v.log.Errorf("failed to get vault seal status, %s", err)
-		return
-	}
 	if v.conf.HAEnabled {
 		v.log.Infof("HA ENABLED", v.conf.HAEnabled)
-		err := vc.JoinRaftCluster()
-		if err != nil {
-			v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-
-		}
-	}
-
-	if res {
-		v.log.Info("vault is sealed, trying to unseal")
-		// if v.conf.HAEnabled {
-		// 	v.log.Infof("HA Enabled", v.conf.HAEnabled)
-		// 	err := vc.JoinRaftCluster()
-		// 	if err != nil {
-		// 		v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-
-		// 	}
+		// res, err := vc.IsVaultSealed()
+		// if err != nil {
+		// 	v.log.Errorf("failed to get vault seal status, %s", err)
+		// 	return
 		// }
-		err := vc.Unseal()
-		if err != nil {
-			v.log.Errorf("failed to unseal vault, %s", err)
-			return
-		}
-		v.log.Info("vault unsealed executed")
+		for _, svc := range servicename {
+			// Extract the pod's IP address
+			res, err := vc.IsVaultSealedForAllInstances(svc)
+			if err != nil {
+				v.log.Errorf("failed to get vault seal status, %s", err)
+				return
+			}
+			if res {
+				if svc == "capten-dev-vault-0" {
+					vc.Unseal()
+				} else {
+					err := vc.JoinRaftCluster()
+					if err != nil {
+						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
 
-		res, err := vc.IsVaultSealed()
-		if res {
-			if v.conf.HAEnabled {
-				v.log.Infof("HA Enabled", v.conf.HAEnabled)
-				err := vc.JoinRaftCluster()
-				if err != nil {
-					v.log.Errorf("Failed to join the HA cluster: %v\n", err)
+					}
+					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					if err != nil {
+						v.log.Errorf("Failed to fetch the credential: %v\n", err)
+
+					}
+					key := unsealKeys[0]
+					vc.UnsealVaultInstance(svc, key)
 
 				}
 			}
-			err := vc.Unseal()
-			if err != nil {
-				v.log.Errorf("failed to unseal vault, %s", err)
-				return
-			}
+
+			//res, err = vc.IsVaultSealed()
+			// Perform the unseal operation on the Vault instance within the pod using the podIP
 		}
+
+	}
+	for _, svc := range servicename {
+		res, err := vc.IsVaultSealedForAllInstances(svc)
+
+		v.log.Debug("Seal Status of %v :%v", svc, res)
 		if err != nil {
 			v.log.Errorf("failed to get vault seal status, %s", err)
 			return
 		}
 		v.log.Infof("vault sealed status: %v", res)
-		return
-	} else {
-		v.log.Debug("vault is in unsealed status")
 	}
+
+	// if res {
+	// 	v.log.Info("vault is sealed, trying to unseal")
+
+	// 	err := vc.Unseal()
+	// 	if err != nil {
+	// 		v.log.Errorf("failed to unseal vault, %s", err)
+	// 		return
+	// 	}
+	// 	v.log.Info("vault unsealed executed")
+
+	// 	res, err := vc.IsVaultSealed()
+	// 	if res {
+	// 		err := vc.Unseal()
+	// 		if err != nil {
+	// 			v.log.Errorf("failed to unseal vault, %s", err)
+	// 			return
+	// 		}
+	// 	}
+	// 	if err != nil {
+	// 		v.log.Errorf("failed to get vault seal status, %s", err)
+	// 		return
+	// 	}
+	// 	v.log.Infof("vault sealed status: %v", res)
+	// 	return
+	// } else {
+	// 	v.log.Debug("vault is in unsealed status")
+	// }
 }

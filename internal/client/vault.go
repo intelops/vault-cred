@@ -177,12 +177,17 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 }
 
 func (vc *VaultClient) JoinRaftCluster() error {
-	
+	leaderInfo, err := vc.c.Sys().Leader()
+	if err != nil {
+		vc.log.Debug("Failed to retrieve leader information: %v\n", err)
+
+	}
 	req := api.RaftJoinRequest{
 		Retry: true,
-	
-		LeaderAPIAddr: "https://capten-dev-vault-0.capten-dev-vault-internal:8201",
+
+		LeaderAPIAddr: leaderInfo.LeaderAddress,
 	}
-	_, err := vc.c.Sys().RaftJoin(&req) // Replace with your leader address
+	vc.log.Debug("Leader API address: %s\n", leaderInfo.LeaderAddress)
+	_, err = vc.c.Sys().RaftJoin(&req) // Replace with your leader address
 	return err
 }
