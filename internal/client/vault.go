@@ -177,17 +177,38 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 }
 
 func (vc *VaultClient) JoinRaftCluster() error {
+	var req *api.RaftJoinRequest
 	leaderInfo, err := vc.c.Sys().Leader()
 	if err != nil {
-		vc.log.Debug("Failed to retrieve leader information: %v\n", err)
 
+		vc.log.Debugf("Failed to retrieve leader information: %v", err)
+		return err
 	}
-	req := &api.RaftJoinRequest{
-		Retry: true,
 
-		LeaderAPIAddr: leaderInfo.LeaderAddress,
+	if leaderInfo.LeaderAddress == "" {
+		// Handle the case where leader address is empty
+		vc.log.Debug("Leader address is empty")
+		return err
+	} else {
+		req = &api.RaftJoinRequest{
+			Retry:         true,
+			LeaderAPIAddr: leaderInfo.LeaderAddress,
+		}
 	}
-	vc.log.Debug("Leader API address: %s\n", leaderInfo.LeaderAddress)
+
+	// req := &api.RaftJoinRequest{
+	// 	Retry:         true,
+	// 	LeaderAPIAddr: leaderInfo.LeaderAddress,
+	// }
+
+	vc.log.Debugf("Leader API address: %s", leaderInfo.LeaderAddress)
+
 	_, err = vc.c.Sys().RaftJoin(req) // Replace with your leader address
-	return err
+	if err != nil {
+		// Handle the join error (e.g., return it or log and return)
+		vc.log.Debugf("Failed to join the Raft cluster: %v", err)
+		return err
+	}
+
+	return nil
 }
