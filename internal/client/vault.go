@@ -179,6 +179,8 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 func (vc *VaultClient) JoinRaftCluster() error {
 	
 	req := api.RaftJoinRequest{
+		Retry: true,
+	
 		LeaderAPIAddr: "https://capten-dev-vault-0.capten-dev-vault-internal:8201",
 	}
 	_, err := vc.c.Sys().RaftJoin(&req) // Replace with your leader address
