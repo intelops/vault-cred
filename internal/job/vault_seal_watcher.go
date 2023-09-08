@@ -60,12 +60,6 @@ func (v *VaultSealWatcher) Run() {
 				if svc == "capten-dev-vault-0" {
 					vc.Unseal()
 				} else {
-					err := vc.JoinRaftCluster()
-					if err != nil {
-						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-						return
-
-					}
 					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
 					if err != nil {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
@@ -73,6 +67,12 @@ func (v *VaultSealWatcher) Run() {
 					}
 					key := unsealKeys[0]
 					vc.UnsealVaultInstance(svc, key)
+
+				}
+				err := vc.JoinRaftCluster()
+				if err != nil {
+					v.log.Errorf("Failed to join the HA cluster: %v\n", err)
+					return
 
 				}
 			}
