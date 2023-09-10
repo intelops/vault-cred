@@ -30,6 +30,7 @@ func (v *VaultSealWatcher) CronSpec() string {
 
 func (v *VaultSealWatcher) Run() {
 	v.log.Debug("started vault seal watcher job")
+
 	vc, err := client.NewVaultClient(v.log, v.conf)
 	if err != nil {
 		v.log.Errorf("%s", err)

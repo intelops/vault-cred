@@ -125,7 +125,7 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 func (vc *VaultClient) UnsealVaultInstance(svc string, unsealKey []string) error {
 	// Create a Vault API client
 	vc.log.Debug("Checking Unseal status for vault Instance")
-	address := fmt.Sprintf("http://%s:8200", svc)
+	address := fmt.Sprintf("https://%s:8200", svc)
 	err := vc.c.SetAddress(address)
 	if err != nil {
 		vc.log.Errorf("Error while setting address")
