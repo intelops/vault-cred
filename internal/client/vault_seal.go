@@ -122,7 +122,7 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 	return rootToken, unsealKeys, nil
 }
 
-func (vc *VaultClient) UnsealVaultInstance(svc string, unsealKey string) error {
+func (vc *VaultClient) UnsealVaultInstance(svc string, unsealKey []string) error {
 	// Create a Vault API client
 	vc.log.Debug("Checking Unseal status for vault Instance")
 	address := fmt.Sprintf("http://%s:8200", svc)
@@ -132,17 +132,27 @@ func (vc *VaultClient) UnsealVaultInstance(svc string, unsealKey string) error {
 	}
 	vc.log.Debug("Address", address)
 
+	for _, key := range unsealKey {
+		unsealResponse, err := vc.c.Sys().Unseal(key)
+		if err != nil {
+			return errors.WithMessage(err, "error while unsealing")
+		}
+		if unsealResponse.Sealed {
+			vc.log.Debug("Vault is still sealed after unsealing attempt")
+		}
+	}
+
 	// Check if Vault is sealed and unseal if necessary
 
 	// Vault is sealed; unseal it
-	unsealResponse, err := vc.c.Sys().Unseal(unsealKey)
-	if err != nil {
-		return err
-	}
+	// unsealResponse, err := vc.c.Sys().Unseal(unsealKey)
+	// if err != nil {
+	// 	return err
+	// }
 
-	if unsealResponse.Sealed {
-		vc.log.Debug("Vault is still sealed after unsealing attempt")
-	}
+	// if unsealResponse.Sealed {
+	// 	vc.log.Debug("Vault is still sealed after unsealing attempt")
+	// }
 
 	// You can add additional error handling or log responses as needed
 	return nil

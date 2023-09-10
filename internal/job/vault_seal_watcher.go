@@ -65,8 +65,7 @@ func (v *VaultSealWatcher) Run() {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
 						return
 					}
-					key := unsealKeys[0]
-					vc.UnsealVaultInstance(svc, key)
+					vc.UnsealVaultInstance(svc, unsealKeys)
 					err = vc.JoinRaftCluster()
 					if err != nil {
 						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
