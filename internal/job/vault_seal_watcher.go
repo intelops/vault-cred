@@ -50,7 +50,7 @@ func (v *VaultSealWatcher) Run() {
 		// 	return
 		// }
 		for _, svc := range servicename {
-			
+
 			res, err := vc.IsVaultSealedForAllInstances(svc)
 			if err != nil {
 				v.log.Errorf("failed to get vault seal status, %s", err)
@@ -63,18 +63,19 @@ func (v *VaultSealWatcher) Run() {
 					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
 					if err != nil {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
-                        return
+						return
 					}
 					key := unsealKeys[0]
 					vc.UnsealVaultInstance(svc, key)
+					err = vc.JoinRaftCluster()
+					if err != nil {
+						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
+						return
+
+					}
 
 				}
-				err := vc.JoinRaftCluster()
-				if err != nil {
-					v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-					return
 
-				}
 			}
 
 			//res, err = vc.IsVaultSealed()
@@ -92,7 +93,7 @@ func (v *VaultSealWatcher) Run() {
 		}
 		v.log.Infof("vault sealed status: %v", res)
 	}
-   
+
 	// if res {
 	// 	v.log.Info("vault is sealed, trying to unseal")
 
@@ -116,7 +117,7 @@ func (v *VaultSealWatcher) Run() {
 	// 		return
 	// 	}
 	// 	v.log.Infof("vault sealed status: %v", res)
-	 	
+
 	// } else {
 	// 	v.log.Debug("vault is in unsealed status")
 	// }
