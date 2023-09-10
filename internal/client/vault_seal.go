@@ -27,7 +27,6 @@ func (vc *VaultClient) Unseal() error {
 		return nil
 	}
 
-
 	rootToken, unsealKeys, err := vc.getVaultSecretValues()
 	if err != nil {
 		return err
@@ -123,34 +122,31 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 	return rootToken, unsealKeys, nil
 }
 
-func (vc *VaultClient)UnsealVaultInstance(svc string, unsealKey string) error {
+func (vc *VaultClient) UnsealVaultInstance(svc string, unsealKey string) error {
 	// Create a Vault API client
-	address :=fmt.Sprintf("http://%s:8200", svc)
-	err:=vc.c.SetAddress(address)
-	if (err!=nil){
+	vc.log.Debug("Checking Unseal status for vault Instance")
+	address := fmt.Sprintf("http://%s:8200", svc)
+	err := vc.c.SetAddress(address)
+	if err != nil {
 		vc.log.Errorf("Error while setting address")
 	}
-    vc.log.Debug("Address",address)	
+	vc.log.Debug("Address", address)
 
 	// Check if Vault is sealed and unseal if necessary
 
-		// Vault is sealed; unseal it
-		unsealResponse, err :=vc.c.Sys().Unseal(unsealKey)
-		if err != nil {
-			return err
-		}
+	// Vault is sealed; unseal it
+	unsealResponse, err := vc.c.Sys().Unseal(unsealKey)
+	if err != nil {
+		return err
+	}
 
-		if unsealResponse.Sealed {
-			vc.log.Debug("Vault is still sealed after unsealing attempt")
-		}
-	
+	if unsealResponse.Sealed {
+		vc.log.Debug("Vault is still sealed after unsealing attempt")
+	}
+
 	// You can add additional error handling or log responses as needed
 	return nil
 }
-
-
-
-
 
 func (vc *VaultClient) GetVaultSecretValuesforMultiInstance() (string, []string, error) {
 	k8s, err := NewK8SClient(vc.log)
@@ -182,11 +178,11 @@ func (vc *VaultClient) GetVaultSecretValuesforMultiInstance() (string, []string,
 	return rootToken, unsealKeys, nil
 }
 
-
 func (vc *VaultClient) IsVaultSealedForAllInstances(svc string) (bool, error) {
-	address :=fmt.Sprintf("http://%s:8200", svc)
-	err:=vc.c.SetAddress(address)
-	if (err!=nil){
+	address := fmt.Sprintf("http://%s:8200", svc)
+	err := vc.c.SetAddress(address)
+	vc.log.Debug("Address for checking vault status", address)
+	if err != nil {
 		vc.log.Errorf("Error while setting address")
 	}
 	status, err := vc.c.Sys().SealStatus()

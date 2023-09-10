@@ -50,7 +50,7 @@ func (v *VaultSealWatcher) Run() {
 		// 	return
 		// }
 		for _, svc := range servicename {
-			// Extract the pod's IP address
+			
 			res, err := vc.IsVaultSealedForAllInstances(svc)
 			if err != nil {
 				v.log.Errorf("failed to get vault seal status, %s", err)
