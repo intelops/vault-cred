@@ -59,7 +59,7 @@ func (v *VaultSealWatcher) Run() {
 
 		vaultClients = append(vaultClients, vc)
 	}
-	v.log.Debug("Vault Clients",vaultClients)
+	v.log.Debug("Vault Clients", vaultClients)
 
 	if v.conf.HAEnabled {
 
@@ -68,17 +68,17 @@ func (v *VaultSealWatcher) Run() {
 		for _, svc := range servicename {
 			switch svc {
 			case "capten-dev-vault-0":
-				vc = vaultClients[0] 
-				v.log.Debug("Vault Client:",vc)
+				vc = vaultClients[0]
+				v.log.Debug("Vault Client:", vc)
 			case "capten-dev-vault-1":
-				vc = vaultClients[1] 
-				v.log.Debug("Vault Client:",vc)
+				vc = vaultClients[1]
+				v.log.Debug("Vault Client:", vc)
 			case "capten-dev-vault-2":
 				vc = vaultClients[2]
-				v.log.Debug("Vault Client:",vc) 
+				v.log.Debug("Vault Client:", vc)
 			default:
 				// Handle the case where the service name doesn't match any of the instances
-			}	
+			}
 			res, err := vc.IsVaultSealed()
 			if err != nil {
 				v.log.Errorf("failed to get vault seal status, %s", err)
@@ -87,13 +87,24 @@ func (v *VaultSealWatcher) Run() {
 			if res {
 				v.log.Info("vault is sealed, trying to unseal")
 				if svc == "capten-dev-vault-0" {
-					vc.Unseal()
-				}else {
-					err := vc.Unseal()
+					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
 					if err != nil {
-						v.log.Errorf("failed to unseal vault, %s", err)
+						v.log.Errorf("Failed to fetch the credential: %v\n", err)
 						return
 					}
+					vc.UnsealVaultInstance(svc, unsealKeys)
+				} else {
+					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					if err != nil {
+						v.log.Errorf("Failed to fetch the credential: %v\n", err)
+						return
+					}
+					vc.UnsealVaultInstance(svc, unsealKeys)
+					// err := vc.Unseal()
+					// if err != nil {
+					// 	v.log.Errorf("failed to unseal vault, %s", err)
+					// 	return
+					// }
 					v.log.Info("vault unsealed executed")
 					err = vc.JoinRaftCluster()
 					if err != nil {
@@ -108,27 +119,38 @@ func (v *VaultSealWatcher) Run() {
 				// 	v.log.Errorf("failed to unseal vault, %s", err)
 				// 	return
 				// }
-			
 
-				res, err := vc.IsVaultSealed()
-				if res {
+				// 	res, err := vc.IsVaultSealed()
+				// 	if res {
 
-					err := vc.Unseal()
-					if err != nil {
-						v.log.Errorf("failed to unseal vault, %s", err)
-						return
-					}
+				// 		err := vc.Unseal()
+				// 		if err != nil {
+				// 			v.log.Errorf("failed to unseal vault, %s", err)
+				// 			return
+				// 		}
 
-				} 
-				if err != nil {
-					v.log.Errorf("failed to get vault seal status, %s", err)
-					return
-				}
-				v.log.Infof("vault sealed status: %v", res)
+				// 	}
+				// 	if err != nil {
+				// 		v.log.Errorf("failed to get vault seal status, %s", err)
+				// 		return
+				// 	}
+				// 	v.log.Infof("vault sealed status: %v", res)
 
-			} else {
-				v.log.Debug("vault is in unsealed status")
+				// } else {
+				// 	v.log.Debug("vault is in unsealed status")
+				// }
 			}
+
+		}
+		for _, svc := range servicename {
+			res, err := vc.IsVaultSealedForAllInstances(svc)
+
+			v.log.Debug("Seal Status of %v :%v", svc, res)
+			if err != nil {
+				v.log.Errorf("failed to get vault seal status, %s", err)
+				return
+			}
+			v.log.Infof("vault sealed status: %v", res)
 		}
 	}
 }
