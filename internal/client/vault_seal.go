@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -178,11 +179,22 @@ func (vc *VaultClient) GetVaultSecretValuesforMultiInstance() (string, []string,
 	var rootToken string
 	for key, val := range vaultSec.Data {
 		if strings.HasPrefix(key, vc.conf.VaultSecretUnSealKeyPrefix) {
-			unsealKeys = append(unsealKeys, val)
+			decodedValue, err := base64.StdEncoding.DecodeString(val)
+			if err != nil {
+				return "", nil, errors.WithMessage(err, "error decoding value")
+			}
+
+			unsealKeys = append(unsealKeys, string(decodedValue))
+			vc.log.Debug("Unseal Keys", unsealKeys)
 			continue
 		}
 		if strings.EqualFold(key, vc.conf.VaultSecretTokenKeyName) {
-			rootToken = val
+			decodedValue, err := base64.StdEncoding.DecodeString(val)
+			if err != nil {
+				return "", nil, errors.WithMessage(err, "error decoding root token")
+			}
+			rootToken = string(decodedValue)
+			vc.log.Debug("Root Token Key", rootToken)
 		}
 	}
 	return rootToken, unsealKeys, nil
