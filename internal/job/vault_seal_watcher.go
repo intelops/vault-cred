@@ -110,6 +110,12 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
+					err = vc.JoinRaftCluster()
+					if err != nil {
+						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
+						return
+
+					}
 					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
 					v.log.Debug("Unseal Keys", unsealKeys)
 					if err != nil {
@@ -128,12 +134,12 @@ func (v *VaultSealWatcher) Run() {
 						return
 					}
 					//	v.log.Info("vault unsealed executed")
-					err = vc.JoinRaftCluster()
-					if err != nil {
-						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-						return
+					// err = vc.JoinRaftCluster()
+					// if err != nil {
+					// 	v.log.Errorf("Failed to join the HA cluster: %v\n", err)
+					// 	return
 
-					}
+					// }
 				}
 
 				// err := vc.Unseal()
