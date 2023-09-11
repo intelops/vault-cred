@@ -87,24 +87,28 @@ func (v *VaultSealWatcher) Run() {
 			if res {
 				v.log.Info("vault is sealed, trying to unseal")
 				if svc == "capten-dev-vault-0" {
-					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
-					if err != nil {
-						v.log.Errorf("Failed to fetch the credential: %v\n", err)
-						return
-					}
-					err = vc.UnsealVaultInstance(svc, unsealKeys)
+					// _, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					// v.log.Debug("Unseal Keys",unsealKeys)
+					// if err != nil {
+					// 	v.log.Errorf("Failed to fetch the credential: %v\n", err)
+					// 	return
+					// }
+					err := vc.Unseal()
+					// err = vc.UnsealVaultInstance(svc, unsealKeys)
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
 						return
 					}
+
 				} else {
 					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					v.log.Debug("Unseal Keys", unsealKeys)
 					if err != nil {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
 						return
 					}
-					err = vc.UnsealVaultInstance(svc, unsealKeys)
-					// err := vc.Unseal()
+					//	err = vc.UnsealVaultInstance(svc, unsealKeys)
+					err = vc.Unseal()
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
 						return
