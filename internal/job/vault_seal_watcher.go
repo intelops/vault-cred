@@ -83,7 +83,12 @@ func (v *VaultSealWatcher) Run() {
 			// default:
 			// 	// Handle the case where the service name doesn't match any of the instances
 			// }
-			res, err := vc.IsVaultSealedForAllInstances(svc)
+			podip,err:=vc.GetPodIP(svc,"platform")
+			if err != nil {
+				v.log.Errorf("failed to retrieve pod ip, %s", err)
+				return
+			}
+			res, err := vc.IsVaultSealedForAllInstances(podip)
 			if err != nil {
 				v.log.Errorf("failed to get vault seal status, %s", err)
 				return
@@ -111,6 +116,10 @@ func (v *VaultSealWatcher) Run() {
 
 				} else {
 					podip,err:=vc.GetPodIP(svc,"platform")
+					if err != nil {
+						v.log.Errorf("failed to retrieve pod ip, %s", err)
+						return
+					}
 					err = vc.JoinRaftCluster(podip)
 					if err != nil {
 						v.log.Errorf("Failed to join the HA cluster: %v\n", err)

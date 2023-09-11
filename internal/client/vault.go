@@ -180,7 +180,7 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 
 func (vc *VaultClient) JoinRaftCluster(podip string) error {
 	var req *api.RaftJoinRequest
-	address := fmt.Sprintf("https://%s:8200", podip)
+	address := fmt.Sprintf("http://%s:8200", podip)
 	err := vc.c.SetAddress(address)
 	if err != nil {
 		vc.log.Errorf("Error while setting address")
