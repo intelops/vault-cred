@@ -45,7 +45,7 @@ env:
 
 vault:
   haenabled: true
-  vaultAddress: http://vault:8200
+  vaultAddress: http://capten-dev-vault-0:8200
   secretName: vault-server
   secretTokenKeyName: roottoken
   secretUnSealKeyPrefix: unsealkey
