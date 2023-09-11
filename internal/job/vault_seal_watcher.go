@@ -83,7 +83,7 @@ func (v *VaultSealWatcher) Run() {
 			// default:
 			// 	// Handle the case where the service name doesn't match any of the instances
 			// }
-			podip,err:=vc.GetPodIP(svc,"platform")
+			podip, err := vc.GetPodIP(svc, "platform")
 			if err != nil {
 				v.log.Errorf("failed to retrieve pod ip, %s", err)
 				return
@@ -96,18 +96,18 @@ func (v *VaultSealWatcher) Run() {
 			if res {
 				v.log.Info("vault is sealed, trying to unseal")
 				if svc == "capten-dev-vault-0" {
-					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
-					v.log.Debug("Unseal Keys",unsealKeys)
+					_, unsealKeys, err := vc.RetrieveKeys("platform", v.conf.VaultSecretName)
+					v.log.Debug("Unseal Keys", unsealKeys)
 					if err != nil {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
 						return
 					}
-					podip,err:=vc.GetPodIP(svc,"platform")
+					podip, err := vc.GetPodIP(svc, "platform")
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
 					}
-				//	err := vc.Unseal()
+					//	err := vc.Unseal()
 					err = vc.UnsealVaultInstance(podip, unsealKeys)
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
@@ -115,18 +115,12 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
-					podip,err:=vc.GetPodIP(svc,"platform")
+					podip, err := vc.GetPodIP(svc, "platform")
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
 					}
-					err = vc.JoinRaftCluster(podip)
-					if err != nil {
-						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-						return
-
-					}
-					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					_, unsealKeys, err := vc.RetrieveKeys("platform", v.conf.VaultSecretName)
 					v.log.Debug("Unseal Keys", unsealKeys)
 					if err != nil {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
@@ -144,12 +138,12 @@ func (v *VaultSealWatcher) Run() {
 						return
 					}
 					//	v.log.Info("vault unsealed executed")
-					// err = vc.JoinRaftCluster()
-					// if err != nil {
-					// 	v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-					// 	return
+					err = vc.JoinRaftCluster(podip)
+					if err != nil {
+						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
+						return
 
-					// }
+					}
 				}
 
 				// err := vc.Unseal()
@@ -181,7 +175,8 @@ func (v *VaultSealWatcher) Run() {
 
 		}
 		for _, svc := range servicename {
-			res, err := vc.IsVaultSealedForAllInstances(svc)
+			podip, _ := vc.GetPodIP(svc, "platform")
+			res, err := vc.IsVaultSealedForAllInstances(podip)
 
 			v.log.Debug("Seal Status of %v :%v", svc, res)
 			if err != nil {
