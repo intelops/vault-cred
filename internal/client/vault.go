@@ -72,6 +72,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 func NewVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	cfg, err := prepareVaultConfig(conf)
 	if err != nil {
+		log.Debug("Error while preparing vault Config")
 		return nil, err
 	}
 
