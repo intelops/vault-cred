@@ -110,7 +110,8 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
-					err = vc.JoinRaftCluster()
+					podip,err:=vc.GetPodIP(svc,"platform")
+					err = vc.JoinRaftCluster(podip)
 					if err != nil {
 						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
 						return
@@ -122,7 +123,7 @@ func (v *VaultSealWatcher) Run() {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
 						return
 					}
-					podip,err:=vc.GetPodIP(svc,"platform")
+					//podip,err:=vc.GetPodIP(svc,"platform")
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return

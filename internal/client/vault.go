@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/vault/api"
@@ -177,8 +178,15 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 	return
 }
 
-func (vc *VaultClient) JoinRaftCluster() error {
+func (vc *VaultClient) JoinRaftCluster(podip string) error {
 	var req *api.RaftJoinRequest
+	address := fmt.Sprintf("https://%s:8200", podip)
+	err := vc.c.SetAddress(address)
+	if err != nil {
+		vc.log.Errorf("Error while setting address")
+	}
+	vc.log.Debug("Address", address)
+
 	leaderInfo, err := vc.c.Sys().Leader()
 	if err != nil {
 
