@@ -116,7 +116,12 @@ func (v *VaultSealWatcher) Run() {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
 						return
 					}
-					err = vc.UnsealVaultInstance(svc, unsealKeys)
+					podip,err:=vc.GetPodIP(svc,"platform")
+					if err != nil {
+						v.log.Errorf("failed to retrieve pod ip, %s", err)
+						return
+					}
+					err = vc.UnsealVaultInstance(podip, unsealKeys)
 					//err = vc.Unseal()
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
