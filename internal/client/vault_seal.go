@@ -20,7 +20,7 @@ func (vc *VaultClient) IsVaultSealed() (bool, error) {
 }
 
 func (vc *VaultClient) Unseal(podip string) error {
-    address := fmt.Sprintf("http://%s:8200", podip)
+	address := fmt.Sprintf("http://%s:8200", podip)
 	err := vc.c.SetAddress(address)
 	if err != nil {
 		vc.log.Errorf("Error while setting address")
@@ -58,7 +58,7 @@ func (vc *VaultClient) Unseal(podip string) error {
 	return nil
 }
 
-func (vc *VaultClient) initializeVaultSecret(podip string) error {
+func (vc *VaultClient) initializeVaultSecret() error {
 
 	unsealKeys, rootToken, err := vc.generateUnsealKeys()
 	if err != nil {
@@ -236,13 +236,3 @@ func (vc *VaultClient) GetPodIP(podName, namespace string) (string, error) {
 	vc.log.Debug("Pod ip", pod.Status.PodIP)
 	return pod.Status.PodIP, nil
 }
-
-
-
-
-
-
-
-
-
-
