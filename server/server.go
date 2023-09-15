@@ -75,28 +75,28 @@ func initScheduler(log logging.Logger, cfg config.Configuration) (s *job.Schedul
 		}
 	}
 
-	// if cfg.VaultPolicyWatchInterval != "" {
-	// 	pj, err := job.NewVaultPolicyWatcher(log, cfg.VaultPolicyWatchInterval)
-	// 	if err != nil {
-	// 		log.Fatal("failed to init policy watcher job", err)
-	// 	}
+	if cfg.VaultPolicyWatchInterval != "" {
+		pj, err := job.NewVaultPolicyWatcher(log, cfg.VaultPolicyWatchInterval)
+		if err != nil {
+			log.Fatal("failed to init policy watcher job", err)
+		}
 
-	// 	err = s.AddJob("vault-policy-watcher", pj)
-	// 	if err != nil {
-	// 		log.Fatal("failed to add policy watcher job", err)
-	// 	}
-	// }
+		err = s.AddJob("vault-policy-watcher", pj)
+		if err != nil {
+			log.Fatal("failed to add policy watcher job", err)
+		}
+	}
 
-	// if cfg.VaultCredSyncInterval != "" {
-	// 	pj, err := job.NewVaultCredSync(log, cfg.VaultCredSyncInterval)
-	// 	if err != nil {
-	// 		log.Fatal("failed to init cred sync job", err)
-	// 	}
+	if cfg.VaultCredSyncInterval != "" {
+		pj, err := job.NewVaultCredSync(log, cfg.VaultCredSyncInterval)
+		if err != nil {
+			log.Fatal("failed to init cred sync job", err)
+		}
 
-	// 	err = s.AddJob("vault-cred-sync", pj)
-	// 	if err != nil {
-	// 		log.Fatal("failed to add cred sync job", err)
-	// 	}
-	// }
+		err = s.AddJob("vault-cred-sync", pj)
+		if err != nil {
+			log.Fatal("failed to add cred sync job", err)
+		}
+	}
 	return
 }

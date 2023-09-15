@@ -16,9 +16,9 @@ type Configuration struct {
 
 type VaultEnv struct {
 	HAEnabled                  bool          `envconfig:"HA_ENABLED" default:"true"`
-	Address                    string        `envconfig:"VAULT_ADDR" default:"http://vault-hash:8200"`
-	Address2                   string        `envconfig:"VAULT_ADDR2" default:"http://capten-dev-vault-1:8200"`
-	Adddress3                  string        `envconfig:"VAULT_ADDR3" default:"http://capten-dev-vault-2:8200"`
+	Address                    string        `envconfig:"VAULT_ADDR" default:"http://vault-hash-0:8200"`
+	Address2                   string        `envconfig:"VAULT_ADDR2" default:"http://vault-hash-1:8200"`
+	Adddress3                  string        `envconfig:"VAULT_ADDR3" default:"http://vault-hash-2:8200"`
 	CACert                     string        `envconfig:"VAULT_CACERT" required:"false"`
 	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
 	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
