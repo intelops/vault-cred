@@ -88,29 +88,29 @@ func (v *VaultSealWatcher) Run() {
 				v.log.Errorf("failed to retrieve pod ip, %s", err)
 				return
 			}
-			v.log.Info("POD IP",podip)
+			v.log.Info("POD IP", podip)
 			res, err := vc.IsVaultSealedForAllInstances(podip)
 			if err != nil {
 				v.log.Errorf("failed to get vault seal status, %s", err)
 				return
 			}
-			v.log.Info("Seal Status",res)
+			v.log.Info("Seal Status", res)
 			if res {
 				v.log.Info("vault is sealed, trying to unseal")
 				if svc == "vault-hash-0" {
-					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
-					v.log.Debug("Unseal Keys", unsealKeys)
-					if err != nil {
-						v.log.Errorf("Failed to fetch the credential: %v\n", err)
-						return
-					}
+					// _, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					// v.log.Debug("Unseal Keys", unsealKeys)
+					// if err != nil {
+					// 	v.log.Errorf("Failed to fetch the credential: %v\n", err)
+					// 	return
+					// }
 					podip, err := vc.GetPodIP(svc, "default")
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
 					}
-					//	err := vc.Unseal()
-					err = vc.UnsealVaultInstance(podip, unsealKeys)
+					err = vc.Unseal(podip)
+					// err = vc.UnsealVaultInstance(podip, unsealKeys)
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
 						return

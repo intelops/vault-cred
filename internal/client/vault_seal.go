@@ -19,8 +19,13 @@ func (vc *VaultClient) IsVaultSealed() (bool, error) {
 	return status.Sealed, nil
 }
 
-func (vc *VaultClient) Unseal() error {
-
+func (vc *VaultClient) Unseal(podip string) error {
+    address := fmt.Sprintf("http://%s:8200", podip)
+	err := vc.c.SetAddress(address)
+	if err != nil {
+		vc.log.Errorf("Error while setting address")
+	}
+	vc.log.Debug("Address", address)
 	status, err := vc.c.Sys().SealStatus()
 	if err != nil {
 		return err
@@ -53,7 +58,8 @@ func (vc *VaultClient) Unseal() error {
 	return nil
 }
 
-func (vc *VaultClient) initializeVaultSecret() error {
+func (vc *VaultClient) initializeVaultSecret(podip string) error {
+
 	unsealKeys, rootToken, err := vc.generateUnsealKeys()
 	if err != nil {
 		return errors.WithMessage(err, "error while generating unseal keys")
