@@ -109,6 +109,7 @@ func (v *VaultSealWatcher) Run() {
 					// 	v.log.Errorf("failed to retrieve pod ip, %s", err)
 					// 	return
 					// }
+					v.log.Info("Unsealing for first instance")
 					err = vc.Unseal()
 					// err = vc.UnsealVaultInstance(podip, unsealKeys)
 					if err != nil {
@@ -129,10 +130,10 @@ func (v *VaultSealWatcher) Run() {
 						return
 					}
 					//podip,err:=vc.GetPodIP(svc,"platform")
-					if err != nil {
-						v.log.Errorf("failed to retrieve pod ip, %s", err)
-						return
-					}
+					// if err != nil {
+					// 	v.log.Errorf("failed to retrieve pod ip, %s", err)
+					// 	return
+					// }
 					err = vc.UnsealVaultInstance(podip, unsealKeys)
 					//err = vc.Unseal()
 					if err != nil {
