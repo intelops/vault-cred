@@ -19,13 +19,9 @@ func (vc *VaultClient) IsVaultSealed() (bool, error) {
 	return status.Sealed, nil
 }
 
-func (vc *VaultClient) Unseal(podip string) error {
-	address := fmt.Sprintf("http://%s:8200", podip)
-	err := vc.c.SetAddress(address)
-	if err != nil {
-		vc.log.Errorf("Error while setting address")
-	}
-	vc.log.Debug("Address", address)
+func (vc *VaultClient) Unseal() error {
+
+
 	status, err := vc.c.Sys().SealStatus()
 	if err != nil {
 		return err
