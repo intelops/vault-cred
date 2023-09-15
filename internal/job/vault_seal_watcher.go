@@ -30,39 +30,39 @@ func (v *VaultSealWatcher) CronSpec() string {
 
 func (v *VaultSealWatcher) Run() {
 	v.log.Debug("started vault seal watcher job")
-	//vc, err := client.NewVaultClient(v.log, v.conf)
-	// if err != nil {
-	// 	v.log.Errorf("%s", err)
-	// 	return
+	vc, err := client.NewVaultClient(v.log, v.conf)
+	if err != nil {
+		v.log.Errorf("%s", err)
+		return
+	}
+	// addresses := []string{
+	// 	v.conf.Address,
+	// 	v.conf.Address2,
+	// 	v.conf.Adddress3,
 	// }
-	addresses := []string{
-		v.conf.Address,
-		v.conf.Address2,
-		v.conf.Adddress3,
-	}
-	servicename := []string{"capten-dev-vault-0", "capten-dev-vault-1", "capten-dev-vault-2"}
+	servicename := []string{"vault-hash-0", "vault-hash-1", "vault-hash-2"}
 
-	var vc *client.VaultClient
-	var vaultClients []*client.VaultClient
-	for _, address := range addresses {
-		conf := config.VaultEnv{
-			Address:     address,
-			ReadTimeout: 30,
-			MaxRetries:  3,
+	// var vc *client.VaultClient
+	// var vaultClients []*client.VaultClient
+	// for _, address := range addresses {
+	// 	conf := config.VaultEnv{
+	// 		Address:     address,
+	// 		ReadTimeout: 30,
+	// 		MaxRetries:  3,
 
-			// Set other configuration options as needed
-		}
-		v.log.Debug("Address Configuration", conf)
+	// 		// Set other configuration options as needed
+	// 	}
+	// 	v.log.Debug("Address Configuration", conf)
 
-		vc, err := client.NewVaultClient(v.log, v.conf)
+	// 	vc, err := client.NewVaultClient(v.log, v.conf)
 
-		if err != nil {
-			v.log.Errorf("%s", err)
-			return
-		}
+	// 	if err != nil {
+	// 		v.log.Errorf("%s", err)
+	// 		return
+	// 	}
 
-		vaultClients = append(vaultClients, vc)
-	}
+	// 	vaultClients = append(vaultClients, vc)
+	// }
 	// v.log.Debug("Vault Clients", vaultClients)
 
 	if v.conf.HAEnabled {
@@ -70,39 +70,41 @@ func (v *VaultSealWatcher) Run() {
 		v.log.Infof("HA ENABLED", v.conf.HAEnabled)
 
 		for _, svc := range servicename {
-			switch svc {
-			case "capten-dev-vault-0":
-				vc = vaultClients[0]
+			// switch svc {
+			// case "capten-dev-vault-0":
+			// 	vc = vaultClients[0]
 
-			case "capten-dev-vault-1":
-				vc = vaultClients[1]
+			// case "capten-dev-vault-1":
+			// 	vc = vaultClients[1]
 
-			case "capten-dev-vault-2":
-				vc = vaultClients[2]
+			// case "capten-dev-vault-2":
+			// 	vc = vaultClients[2]
 
-			default:
-				// Handle the case where the service name doesn't match any of the instances
-			}
-			podip, err := vc.GetPodIP(svc, "platform")
+			// default:
+			// 	// Handle the case where the service name doesn't match any of the instances
+			// }
+			podip, err := vc.GetPodIP(svc, "default")
 			if err != nil {
 				v.log.Errorf("failed to retrieve pod ip, %s", err)
 				return
 			}
+			v.log.Info("POD IP",podip)
 			res, err := vc.IsVaultSealedForAllInstances(podip)
 			if err != nil {
 				v.log.Errorf("failed to get vault seal status, %s", err)
 				return
 			}
+			v.log.Info("Seal Status",res)
 			if res {
 				v.log.Info("vault is sealed, trying to unseal")
-				if svc == "capten-dev-vault-0" {
+				if svc == "vault-hash-0" {
 					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
 					v.log.Debug("Unseal Keys", unsealKeys)
 					if err != nil {
 						v.log.Errorf("Failed to fetch the credential: %v\n", err)
 						return
 					}
-					podip, err := vc.GetPodIP(svc, "platform")
+					podip, err := vc.GetPodIP(svc, "default")
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
@@ -115,7 +117,7 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
-					podip, err := vc.GetPodIP(svc, "platform")
+					podip, err := vc.GetPodIP(svc, "default")
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
@@ -175,7 +177,7 @@ func (v *VaultSealWatcher) Run() {
 
 		}
 		for _, svc := range servicename {
-			podip, _ := vc.GetPodIP(svc, "platform")
+			podip, _ := vc.GetPodIP(svc, "default")
 			res, err := vc.IsVaultSealedForAllInstances(podip)
 
 			v.log.Debug("Seal Status of %v :%v", svc, res)
