@@ -118,7 +118,9 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
+
 					podip, err := vc.GetPodIP(svc, "default")
+					v.log.Info("Unsealing for second % vinstance", podip)
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return

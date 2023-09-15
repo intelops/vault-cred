@@ -21,7 +21,7 @@ func (vc *VaultClient) IsVaultSealed() (bool, error) {
 
 func (vc *VaultClient) Unseal() error {
 
-
+	vc.log.Info("Unsealing for first instance inside unseal func")
 	status, err := vc.c.Sys().SealStatus()
 	if err != nil {
 		return err
