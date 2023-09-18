@@ -1,6 +1,8 @@
 package job
 
 import (
+	"context"
+
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/client"
@@ -40,9 +42,20 @@ func (v *VaultSealWatcher) Run() {
 		v.conf.Address2,
 		v.conf.Adddress3,
 	}
-	servicename := []string{"vault-hash-0", "vault-hash-1", "vault-hash-2"}
+	k8sclient, err := client.NewK8SClient(v.log)
+	if err != nil {
+		v.log.Errorf("Error while connecting with k8s %s", err)
+		return
+	}
+	podname, err := k8sclient.GetVaultPodInstances(context.Background())
+	if err != nil {
+		v.log.Errorf("Error while retrieving vault instances %s", err)
+		return
+	}
+	//servicename := []string{"vault-hash-0", "vault-hash-1", "vault-hash-2"}
 
 	var vc *client.VaultClient
+	var leaderpodip string
 	var vaultClients []*client.VaultClient
 	for _, address := range addresses {
 		conf := v.conf // Make a copy of the existing configuration
@@ -69,7 +82,7 @@ func (v *VaultSealWatcher) Run() {
 
 		v.log.Infof("HA ENABLED", v.conf.HAEnabled)
 
-		for _, svc := range servicename {
+		for _, svc := range podname {
 			switch svc {
 			case "vault-hash-0":
 				vc = vaultClients[0]
@@ -84,7 +97,7 @@ func (v *VaultSealWatcher) Run() {
 			default:
 				// Handle the case where the service name doesn't match any of the instances
 			}
-			podip, err := vc.GetPodIP(svc, "default")
+			podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
 			if err != nil {
 				v.log.Errorf("failed to retrieve pod ip, %s", err)
 				return
@@ -112,9 +125,22 @@ func (v *VaultSealWatcher) Run() {
 						v.log.Errorf("failed to unseal vault, %s", err)
 						return
 					}
+					podip, err := vc.GetPodIP(svc, "default")
+					v.log.Info("Unsealing for second % vinstance", podip)
+					if err != nil {
+						v.log.Errorf("failed to retrieve pod ip, %s", err)
+						return
+					}
+					leaderpodip = podip
+					v.log.Info("Leader Ip", leaderpodip)
 
 				} else {
-
+					leaderaddr, err := vc.LeaderAPIAddr(leaderpodip)
+					if err != nil {
+						v.log.Errorf("failed to retrieve leader address, %s", err)
+						return
+					}
+					v.log.Info("Leader Address", leaderaddr)
 					podip, err := vc.GetPodIP(svc, "default")
 					v.log.Info("Unsealing for second % vinstance", podip)
 					if err != nil {
@@ -122,32 +148,37 @@ func (v *VaultSealWatcher) Run() {
 						return
 					}
 					v.log.Debug("POD IP", podip)
-					err = vc.JoinRaftCluster(podip)
+					err = vc.JoinRaftCluster(podip, leaderaddr)
 					if err != nil {
 						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
 						return
 
 					}
-					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
-					v.log.Debug("Unseal Keys", unsealKeys)
-					if err != nil {
-						v.log.Errorf("Failed to fetch the credential: %v\n", err)
-						return
-					}
-
-					err = vc.UnsealVaultInstance(podip, unsealKeys)
-
+					err = vc.Unseal()
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
 						return
 					}
+					// _, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					// v.log.Debug("Unseal Keys", unsealKeys)
+					// if err != nil {
+					// 	v.log.Errorf("Failed to fetch the credential: %v\n", err)
+					// 	return
+					// }
+
+					// err = vc.UnsealVaultInstance(podip, unsealKeys)
+
+					// if err != nil {
+					// 	v.log.Errorf("failed to unseal vault, %s", err)
+					// 	return
+					// }
 
 				}
 
 			}
 
 		}
-		for _, svc := range servicename {
+		for _, svc := range podname {
 			podip, _ := vc.GetPodIP(svc, "default")
 			res, err := vc.IsVaultSealedForAllInstances(podip)
 

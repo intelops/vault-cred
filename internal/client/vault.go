@@ -178,7 +178,7 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 	return
 }
 
-func (vc *VaultClient) JoinRaftCluster(podip string) error {
+func (vc *VaultClient) JoinRaftCluster(podip string, leaderaddress string) error {
 	// Construct the Vault API address
 	address := fmt.Sprintf("http://%s:8200", podip)
 
@@ -190,13 +190,15 @@ func (vc *VaultClient) JoinRaftCluster(podip string) error {
 
 	vc.log.Debugf("Address: %s", address)
 
+	// Extract the leader address from the response
+
 	// Retrieve leader information
 	// leaderInfo, err := vc.c.Sys().Leader()
 	// if err != nil {
 	// 	return fmt.Errorf("failed to retrieve leader information: %v", err)
 	// }
 
-	// vc.log.Debugf("Leader address: %s", leaderInfo.LeaderAddress)
+	//vc.log.Debugf("Leader address: %s", leaderInfo.LeaderAddress)
 
 	// if leaderInfo.LeaderAddress == "" {
 	// 	// Handle the case where leader address is empty
@@ -206,7 +208,7 @@ func (vc *VaultClient) JoinRaftCluster(podip string) error {
 
 	req := &api.RaftJoinRequest{
 		Retry:         true,
-		LeaderAPIAddr: "http://vault-hash-0.vault-hash-internal:8200",
+		LeaderAPIAddr: leaderaddress,
 		//LeaderAPIAddr: leaderInfo.LeaderAddress,
 	}
 
@@ -218,4 +220,32 @@ func (vc *VaultClient) JoinRaftCluster(podip string) error {
 	}
 
 	return nil
+}
+
+func (vc *VaultClient) LeaderAPIAddr(podip string) (string, error) {
+	address := fmt.Sprintf("http://%s:8200", podip)
+
+	if err := vc.c.SetAddress(address); err != nil {
+		vc.log.Debug("failed to set Vault client address: %v", err)
+		return "", err
+	}
+
+	vc.log.Debugf("Address: %s", address)
+
+	leaderInfo, err := vc.c.Sys().Leader()
+	if err != nil {
+		vc.log.Error("failed to retrieve leader information: %v", err)
+		return "", err
+	}
+
+	vc.log.Debugf("Leader address: %s", leaderInfo.LeaderAddress)
+
+	if leaderInfo.LeaderAddress == "" {
+
+		vc.log.Debug("Leader address is empty")
+	}
+	leaderaddress := leaderInfo.LeaderAddress
+
+	return leaderaddress, nil
+
 }
