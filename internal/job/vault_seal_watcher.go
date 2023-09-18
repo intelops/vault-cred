@@ -73,13 +73,14 @@ func (v *VaultSealWatcher) Run() {
 			switch svc {
 			case "vault-hash-0":
 				vc = vaultClients[0]
+				v.log.Debug("Vault Client",vc)
 
 			case "vault-hash-1":
 				vc = vaultClients[1]
-
+				v.log.Debug("Vault Client",vc)
 			case "vault-hash-2":
 				vc = vaultClients[2]
-
+				v.log.Debug("Vault Client",vc)
 			default:
 				// Handle the case where the service name doesn't match any of the instances
 			}
@@ -100,7 +101,12 @@ func (v *VaultSealWatcher) Run() {
 				if svc == "vault-hash-0" {
 					
 					v.log.Info("Unsealing for first instance")
-					err = vc.Unseal()
+					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					if err != nil {
+						v.log.Errorf("Failed to fetch the credential: %v\n", err)
+						return
+					}
+					err = vc.UnsealVaultInstance(podip,unsealKeys)
 				
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
