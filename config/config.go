@@ -24,7 +24,7 @@ type VaultEnv struct {
 	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
 	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
 	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-server"`
-	VaultSecretNameSpace       string        `envconfig:"POD_NAMESPACE" required:"true"`
+	VaultSecretNameSpace       string        `envconfig:"POD_NAMESPACE" default:"default" required:"true"`
 	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"root-token"`
 	VaultSecretUnSealKeyPrefix string        `envconfig:"VAULT_SECRET_UNSEAL_KEY_PREFIX" default:"unsealkey"`
 	VaultToken                 string        `envconfig:"VAULT_TOKEN"`

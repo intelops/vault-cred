@@ -30,7 +30,7 @@ func (v *VaultSealWatcher) CronSpec() string {
 
 func (v *VaultSealWatcher) Run() {
 	v.log.Debug("started vault seal watcher job")
-//	vc, err := client.NewVaultClient(v.log, v.conf)
+	//	vc, err := client.NewVaultClient(v.log, v.conf)
 	// if err != nil {
 	// 	v.log.Errorf("%s", err)
 	// 	return
@@ -49,8 +49,6 @@ func (v *VaultSealWatcher) Run() {
 			Address:     address,
 			ReadTimeout: 30,
 			MaxRetries:  3,
-
-		
 		}
 		v.log.Debug("Address Configuration", conf)
 
@@ -73,14 +71,14 @@ func (v *VaultSealWatcher) Run() {
 			switch svc {
 			case "vault-hash-0":
 				vc = vaultClients[0]
-				v.log.Debug("Vault Client",vc)
+				v.log.Debug("Vault Client", vc)
 
 			case "vault-hash-1":
 				vc = vaultClients[1]
-				v.log.Debug("Vault Client",vc)
+				v.log.Debug("Vault Client", vc)
 			case "vault-hash-2":
 				vc = vaultClients[2]
-				v.log.Debug("Vault Client",vc)
+				v.log.Debug("Vault Client", vc)
 			default:
 				// Handle the case where the service name doesn't match any of the instances
 			}
@@ -99,15 +97,15 @@ func (v *VaultSealWatcher) Run() {
 			if res {
 				v.log.Info("vault is sealed, trying to unseal")
 				if svc == "vault-hash-0" {
-					
+
 					v.log.Info("Unsealing for first instance")
-					_, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
-					if err != nil {
-						v.log.Errorf("Failed to fetch the credential: %v\n", err)
-						return
-					}
-					err = vc.UnsealVaultInstance(podip,unsealKeys)
-				
+					// _, unsealKeys, err := vc.GetVaultSecretValuesforMultiInstance()
+					// if err != nil {
+					// 	v.log.Errorf("Failed to fetch the credential: %v\n", err)
+					// 	return
+					// }
+					//err = vc.UnsealVaultInstance(podip,unsealKeys)
+					err := vc.Unseal()
 					if err != nil {
 						v.log.Errorf("failed to unseal vault, %s", err)
 						return
@@ -141,11 +139,9 @@ func (v *VaultSealWatcher) Run() {
 						return
 
 					}
-				
 
 				}
 
-			
 			}
 
 		}
