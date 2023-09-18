@@ -45,14 +45,16 @@ func (v *VaultSealWatcher) Run() {
 	var vc *client.VaultClient
 	var vaultClients []*client.VaultClient
 	for _, address := range addresses {
-		conf := config.VaultEnv{
-			Address:     address,
-			ReadTimeout: 30,
-			MaxRetries:  3,
-		}
+		conf := v.conf // Make a copy of the existing configuration
+		conf.Address = address
+		// conf := config.VaultEnv{
+		// 	Address:     address,
+		// //	ReadTimeout: 30,
+		// //	MaxRetries:  3,
+		// }
 		v.log.Debug("Address Configuration", conf)
 
-		vc, err := client.NewVaultClient(v.log, v.conf)
+		vc, err := client.NewVaultClient(v.log, conf)
 
 		if err != nil {
 			v.log.Errorf("%s", err)
@@ -119,6 +121,7 @@ func (v *VaultSealWatcher) Run() {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
 					}
+					v.log.Debug("POD IP", podip)
 					err = vc.JoinRaftCluster(podip)
 					if err != nil {
 						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
