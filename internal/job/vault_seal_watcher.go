@@ -32,11 +32,7 @@ func (v *VaultSealWatcher) CronSpec() string {
 
 func (v *VaultSealWatcher) Run() {
 	v.log.Debug("started vault seal watcher job")
-	//	vc, err := client.NewVaultClient(v.log, v.conf)
-	// if err != nil {
-	// 	v.log.Errorf("%s", err)
-	// 	return
-	// }
+
 	addresses := []string{
 		v.conf.Address,
 		v.conf.Address2,
@@ -52,19 +48,14 @@ func (v *VaultSealWatcher) Run() {
 		v.log.Errorf("Error while retrieving vault instances %s", err)
 		return
 	}
-	//servicename := []string{"vault-hash-0", "vault-hash-1", "vault-hash-2"}
-
+	
 	var vc *client.VaultClient
-	var leaderpodip string
+
 	var vaultClients []*client.VaultClient
 	for _, address := range addresses {
-		conf := v.conf // Make a copy of the existing configuration
+		conf := v.conf 
 		conf.Address = address
-		// conf := config.VaultEnv{
-		// 	Address:     address,
-		// //	ReadTimeout: 30,
-		// //	MaxRetries:  3,
-		// }
+
 		v.log.Debug("Address Configuration", conf)
 
 		vc, err := client.NewVaultClient(v.log, conf)
@@ -83,6 +74,7 @@ func (v *VaultSealWatcher) Run() {
 		v.log.Infof("HA ENABLED", v.conf.HAEnabled)
 
 		for _, svc := range podname {
+			var leaderpodip string
 			switch svc {
 			case "vault-hash-0":
 				vc = vaultClients[0]
@@ -103,13 +95,13 @@ func (v *VaultSealWatcher) Run() {
 				v.log.Errorf("failed to retrieve pod ip, %s", err)
 				return
 			}
-			v.log.Info("POD IP", podip)
+
 			res, err := vc.IsVaultSealedForAllInstances(podip)
 			if err != nil {
 				v.log.Errorf("failed to get vault seal status, %s", err)
 				return
 			}
-			v.log.Info("Seal Status", res)
+			v.log.Info("Seal Status for  %v", podip, res)
 			if res {
 				v.log.Info("vault is sealed, trying to unseal")
 				if svc == "vault-hash-0" {
