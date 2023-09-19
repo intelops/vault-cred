@@ -32,7 +32,6 @@ func (v *VaultSealWatcher) CronSpec() string {
 
 func (v *VaultSealWatcher) Run() {
 	v.log.Debug("started vault seal watcher job")
-	var leaderpodip string
 	addresses := []string{
 		v.conf.Address,
 		v.conf.Address2,
@@ -74,14 +73,20 @@ func (v *VaultSealWatcher) Run() {
 			switch svc {
 			case "vault-hash-0":
 				vc = vaultClients[0]
-				v.log.Debug("Vault Client", vc)
 
+				podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
+				if err != nil {
+					v.log.Errorf("failed to retrieve pod ip, %s", err)
+					return
+				}
+
+				v.conf.LeaderPodIp = podip
 			case "vault-hash-1":
 				vc = vaultClients[1]
-				v.log.Debug("Vault Client", vc)
+
 			case "vault-hash-2":
 				vc = vaultClients[2]
-				v.log.Debug("Vault Client", vc)
+
 			default:
 
 			}
@@ -104,8 +109,8 @@ func (v *VaultSealWatcher) Run() {
 
 					v.log.Info("Unsealing for first instance")
 					podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
-					leaderpodip = podip
-					v.log.Info("Leader Ip", leaderpodip)
+					v.conf.LeaderPodIp = podip
+					v.log.Info("Leader Ip", v.conf.LeaderPodIp)
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
@@ -117,20 +122,20 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
-					v.log.Info("Leader Pod Ip", leaderpodip)
-					leaderaddr, err := vc.LeaderAPIAddr(leaderpodip)
+					v.log.Info("Leader Pod Ip", v.conf.LeaderPodIp)
+					leaderaddr, err := vc.LeaderAPIAddr(v.conf.LeaderPodIp)
 					if err != nil {
 						v.log.Errorf("failed to retrieve leader address, %s", err)
 						return
 					}
 					v.log.Info("Leader Address", leaderaddr)
 					podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
-					v.log.Infof("Unsealing for second %v instance", podip)
+					v.log.Infof("Unsealing for  %v instance", podip)
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
 					}
-					v.log.Debug("POD IP", podip)
+
 					err = vc.JoinRaftCluster(podip, leaderaddr)
 					if err != nil {
 						v.log.Errorf("Failed to join the HA cluster: %v\n", err)

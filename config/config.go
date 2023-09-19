@@ -29,6 +29,7 @@ type VaultEnv struct {
 	VaultSecretUnSealKeyPrefix string        `envconfig:"VAULT_SECRET_UNSEAL_KEY_PREFIX" default:"unsealkey"`
 	VaultToken                 string        `envconfig:"VAULT_TOKEN"`
 	VaultCredSyncSecretName    string        `envconfig:"VAULT_CRED_SYNC_SECRET_NAME" default:"vault-cred-sync-data"`
+    LeaderPodIp string 
 }
 
 func FetchConfiguration() (Configuration, error) {
