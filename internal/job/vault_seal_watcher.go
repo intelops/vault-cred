@@ -32,64 +32,45 @@ func (v *VaultSealWatcher) CronSpec() string {
 
 func (v *VaultSealWatcher) Run() {
 	v.log.Debug("started vault seal watcher job")
-	addresses := []string{
-		v.conf.Address,
-		v.conf.Address2,
-		v.conf.Adddress3,
-	}
-	k8sclient, err := client.NewK8SClient(v.log)
-	if err != nil {
-		v.log.Errorf("Error while connecting with k8s %s", err)
-		return
-	}
-	podname, err := k8sclient.GetVaultPodInstances(context.Background())
-	if err != nil {
-		v.log.Errorf("Error while retrieving vault instances %s", err)
-		return
-	}
 
-	var vc *client.VaultClient
+	if v.conf.HAEnabled {
+		v.log.Infof(" Vault HA ENABLED", v.conf.HAEnabled)
 
-	var vaultClients []*client.VaultClient
-	for _, address := range addresses {
-		conf := v.conf
-		conf.Address = address
-		vc, err := client.NewVaultClient(v.log, conf)
-
+		addresses := []string{
+			v.conf.Address,
+			v.conf.Address2,
+			v.conf.Adddress3,
+		}
+		k8sclient, err := client.NewK8SClient(v.log)
 		if err != nil {
-			v.log.Errorf("%s", err)
+			v.log.Errorf("Error while connecting with k8s %s", err)
+			return
+		}
+		podname, err := k8sclient.GetVaultPodInstances(context.Background())
+		if err != nil {
+			v.log.Errorf("Error while retrieving vault instances %s", err)
 			return
 		}
 
-		vaultClients = append(vaultClients, vc)
-	}
+		var vc *client.VaultClient
 
-	if v.conf.HAEnabled {
+		var vaultClients []*client.VaultClient
+		for _, address := range addresses {
+			conf := v.conf
+			conf.Address = address
+			vc, err := client.NewVaultClient(v.log, conf)
 
-		v.log.Infof("HA ENABLED", v.conf.HAEnabled)
-
-		for _, svc := range podname {
-
-			switch svc {
-			case "vault-hash-0":
-				vc = vaultClients[0]
-
-				podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
-				if err != nil {
-					v.log.Errorf("failed to retrieve pod ip, %s", err)
-					return
-				}
-
-				v.conf.LeaderPodIp = podip
-			case "vault-hash-1":
-				vc = vaultClients[1]
-
-			case "vault-hash-2":
-				vc = vaultClients[2]
-
-			default:
-
+			if err != nil {
+				v.log.Errorf("%s", err)
+				return
 			}
+
+			vaultClients = append(vaultClients, vc)
+		}
+
+		for i, svc := range podname {
+
+			vc = vaultClients[i]
 
 			podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
 			if err != nil {
@@ -104,13 +85,13 @@ func (v *VaultSealWatcher) Run() {
 			}
 			v.log.Info("Seal Status for  %v", podip, res)
 			if res {
-				v.log.Info("vault is sealed, trying to unseal")
-				if svc == "vault-hash-0" {
+
+				if i == 0 {
 
 					v.log.Info("Unsealing for first instance")
 					podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
 					v.conf.LeaderPodIp = podip
-					v.log.Info("Leader Ip", v.conf.LeaderPodIp)
+
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
 						return
@@ -122,13 +103,13 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
-					v.log.Info("Leader Pod Ip", v.conf.LeaderPodIp)
+
 					leaderaddr, err := vc.LeaderAPIAddr(v.conf.LeaderPodIp)
 					if err != nil {
 						v.log.Errorf("failed to retrieve leader address, %s", err)
 						return
 					}
-					v.log.Info("Leader Address", leaderaddr)
+					v.log.Debug("Leader Address", leaderaddr)
 					podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
 					v.log.Infof("Unsealing for  %v instance", podip)
 					if err != nil {
@@ -154,5 +135,37 @@ func (v *VaultSealWatcher) Run() {
 
 		}
 
+	} else {
+		vc, err := client.NewVaultClient(v.log, v.conf)
+		if err != nil {
+			v.log.Errorf("%s", err)
+			return
+		}
+
+		res, err := vc.IsVaultSealed()
+		if err != nil {
+			v.log.Errorf("failed to get vault seal status, %s", err)
+			return
+		}
+
+		if res {
+			v.log.Info("vault is sealed, trying to unseal")
+			err := vc.Unseal()
+			if err != nil {
+				v.log.Errorf("failed to unseal vault, %s", err)
+				return
+			}
+			v.log.Info("vault unsealed executed")
+
+			res, err := vc.IsVaultSealed()
+			if err != nil {
+				v.log.Errorf("failed to get vault seal status, %s", err)
+				return
+			}
+			v.log.Infof("vault sealed status: %v", res)
+			return
+		} else {
+			v.log.Debug("vault is in unsealed status")
+		}
 	}
 }
