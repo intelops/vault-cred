@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -152,5 +153,7 @@ func (k *K8SClient) GetVaultPodInstances(ctx context.Context) ([]string, error) 
 		
 
 	}
+	sort.Strings(podnames)
+	
 	return podnames,nil
 }
