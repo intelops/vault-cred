@@ -97,7 +97,7 @@ func (v *VaultSealWatcher) Run() {
 			default:
 				// Handle the case where the service name doesn't match any of the instances
 			}
-			v.log.Info("Namespace", v.conf.VaultSecretNameSpace)
+
 			podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
 			if err != nil {
 				v.log.Errorf("failed to retrieve pod ip, %s", err)
@@ -136,13 +136,14 @@ func (v *VaultSealWatcher) Run() {
 					}
 
 				} else {
+					v.log.Info("Leader Pod Ip", leaderpodip)
 					leaderaddr, err := vc.LeaderAPIAddr(leaderpodip)
 					if err != nil {
 						v.log.Errorf("failed to retrieve leader address, %s", err)
 						return
 					}
 					v.log.Info("Leader Address", leaderaddr)
-					podip, err := vc.GetPodIP(svc, "default")
+					podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
 					v.log.Info("Unsealing for second % vinstance", podip)
 					if err != nil {
 						v.log.Errorf("failed to retrieve pod ip, %s", err)
