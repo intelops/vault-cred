@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (vc *VaultClient) IsVaultSealed() (bool, error) {
@@ -139,18 +138,4 @@ func (vc *VaultClient) IsVaultSealedForAllInstances(svc string) (bool, error) {
 		return false, err
 	}
 	return status.Sealed, nil
-}
-
-func (vc *VaultClient) GetPodIP(podName, namespace string) (string, error) {
-	k8s, err := NewK8SClient(vc.log)
-	if err != nil {
-		return "", errors.WithMessage(err, "error initializing k8s client")
-	}
-
-	pod, err := k8s.client.CoreV1().Pods(namespace).Get(context.TODO(), podName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	vc.log.Debug("Pod Host Name", pod.ObjectMeta.Name)
-	return pod.ObjectMeta.Name, nil
 }
