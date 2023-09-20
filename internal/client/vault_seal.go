@@ -29,7 +29,6 @@ func (vc *VaultClient) Unseal() error {
 	if !status.Sealed {
 		return nil
 	}
-	
 
 	rootToken, unsealKeys, err := vc.getVaultSecretValues()
 	if err != nil {
@@ -128,10 +127,6 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 	return rootToken, unsealKeys, nil
 }
 
-
-
-
-
 func (vc *VaultClient) IsVaultSealedForAllInstances(svc string) (bool, error) {
 	address := fmt.Sprintf("http://%s:8200", svc)
 	err := vc.c.SetAddress(address)
@@ -156,6 +151,6 @@ func (vc *VaultClient) GetPodIP(podName, namespace string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	vc.log.Debug("Pod ip", pod.Status.PodIP)
-	return pod.Status.PodIP, nil
+	vc.log.Debug("Pod Host Name", pod.ObjectMeta.Name)
+	return pod.ObjectMeta.Name, nil
 }

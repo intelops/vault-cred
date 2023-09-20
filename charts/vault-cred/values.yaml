@@ -45,9 +45,10 @@ env:
 
 vault:
   haenabled: true
-  vaultAddress: http://vault-hash-1:8200
-  vaultAddress2: http://vault-hash-2:8200
-  vaultAddress3: http://vault-hash-3:8200
+  vaultAddress: http://vault-hash:8200
+  vault_server_address1: http://vault-hash-1:8200
+  vault_server_address2: http://vault-hash-2:8200
+  vault_server_address3: http://vault-hash-3:8200
   secretName: vault-server
   secretTokenKeyName: roottoken
   secretUnSealKeyPrefix: unsealkey

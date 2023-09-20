@@ -35,104 +35,10 @@ func (v *VaultSealWatcher) Run() {
 
 	if v.conf.HAEnabled {
 		v.log.Infof(" Vault HA ENABLED", v.conf.HAEnabled)
-
-		addresses := []string{
-			v.conf.Address,
-			v.conf.Address2,
-			v.conf.Adddress3,
-		}
-		k8sclient, err := client.NewK8SClient(v.log)
+		err := v.Unseal_HA_Enabled()
 		if err != nil {
-			v.log.Errorf("Error while connecting with k8s %s", err)
+			v.log.Errorf("%s", err)
 			return
-		}
-		podname, err := k8sclient.GetVaultPodInstances(context.Background())
-		if err != nil {
-			v.log.Errorf("Error while retrieving vault instances %s", err)
-			return
-		}
-
-		var vc *client.VaultClient
-
-		var vaultClients []*client.VaultClient
-		for _, address := range addresses {
-			conf := v.conf
-			conf.Address = address
-			vc, err := client.NewVaultClient(v.log, conf)
-
-			if err != nil {
-				v.log.Errorf("%s", err)
-				return
-			}
-
-			vaultClients = append(vaultClients, vc)
-		}
-
-		for i, svc := range podname {
-
-			vc = vaultClients[i]
-
-			podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
-			if err != nil {
-				v.log.Errorf("failed to retrieve pod ip, %s", err)
-				return
-			}
-
-			res, err := vc.IsVaultSealedForAllInstances(podip)
-			if err != nil {
-				v.log.Errorf("failed to get vault seal status, %s", err)
-				return
-			}
-			v.log.Info("Seal Status for  %v", podip, res)
-			if res {
-
-				if i == 0 {
-
-					v.log.Info("Unsealing for first instance")
-					podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
-					v.conf.LeaderPodIp = podip
-
-					if err != nil {
-						v.log.Errorf("failed to retrieve pod ip, %s", err)
-						return
-					}
-					err = vc.Unseal()
-					if err != nil {
-						v.log.Errorf("failed to unseal vault, %s", err)
-						return
-					}
-
-				} else {
-
-					leaderaddr, err := vc.LeaderAPIAddr(v.conf.LeaderPodIp)
-					if err != nil {
-						v.log.Errorf("failed to retrieve leader address, %s", err)
-						return
-					}
-					v.log.Debug("Leader Address", leaderaddr)
-					podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
-					v.log.Infof("Unsealing for  %v instance", podip)
-					if err != nil {
-						v.log.Errorf("failed to retrieve pod ip, %s", err)
-						return
-					}
-
-					err = vc.JoinRaftCluster(podip, leaderaddr)
-					if err != nil {
-						v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-						return
-
-					}
-					err = vc.Unseal()
-					if err != nil {
-						v.log.Errorf("failed to unseal vault, %s", err)
-						return
-					}
-
-				}
-
-			}
-
 		}
 
 	} else {
@@ -168,4 +74,106 @@ func (v *VaultSealWatcher) Run() {
 			v.log.Debug("vault is in unsealed status")
 		}
 	}
+}
+func (v *VaultSealWatcher) Unseal_HA_Enabled() error {
+	
+	addresses := []string{
+		v.conf.Address,
+		v.conf.Address2,
+		v.conf.Adddress3,
+	}
+	k8sclient, err := client.NewK8SClient(v.log)
+	if err != nil {
+		v.log.Errorf("Error while connecting with k8s %s", err)
+		return err
+	}
+	podname, err := k8sclient.GetVaultPodInstances(context.Background())
+	if err != nil {
+		v.log.Errorf("Error while retrieving vault instances %s", err)
+		return err
+	}
+
+	var vc *client.VaultClient
+
+	var vaultClients []*client.VaultClient
+	for _, address := range addresses {
+		conf := v.conf
+		conf.Address = address
+		vc, err := client.NewVaultClient(v.log, conf)
+
+		if err != nil {
+			v.log.Errorf("%s", err)
+			return err
+		}
+
+		vaultClients = append(vaultClients, vc)
+	}
+
+	for i, svc := range podname {
+
+		vc = vaultClients[i]
+
+		// podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
+		// if err != nil {
+		// 	v.log.Errorf("failed to retrieve pod ip, %s", err)
+		// 	return err
+		// }
+
+		res, err := vc.IsVaultSealedForAllInstances(svc)
+		if err != nil {
+			v.log.Errorf("failed to get vault seal status, %s", err)
+			return err
+		}
+		v.log.Info("Seal Status for  %v", svc, res)
+		if res {
+
+			if i == 0 {
+
+				v.log.Info("Unsealing for first instance")
+				// podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
+				v.conf.LeaderPodIp = svc
+
+				if err != nil {
+					v.log.Errorf("failed to retrieve pod ip, %s", err)
+					return err
+				}
+				err = vc.Unseal()
+				if err != nil {
+					v.log.Errorf("failed to unseal vault, %s", err)
+					return err
+				}
+
+			} else {
+
+				leaderaddr, err := vc.LeaderAPIAddr(v.conf.LeaderPodIp)
+				if err != nil {
+					v.log.Errorf("failed to retrieve leader address, %s", err)
+					return err
+				}
+				v.log.Debug("Leader Address", leaderaddr)
+			//	podip, err := vc.GetPodIP(svc, v.conf.VaultSecretNameSpace)
+				v.log.Infof("Unsealing for  %v instance", podname)
+				// if err != nil {
+				// 	v.log.Errorf("failed to retrieve pod ip, %s", err)
+				// 	return err
+				// }
+
+				err = vc.JoinRaftCluster(svc, leaderaddr)
+				if err != nil {
+					v.log.Errorf("Failed to join the HA cluster: %v\n", err)
+					return err
+
+				}
+				err = vc.Unseal()
+				if err != nil {
+					v.log.Errorf("failed to unseal vault, %s", err)
+					return err
+				}
+
+			}
+
+		}
+
+	}
+	return nil
 }
