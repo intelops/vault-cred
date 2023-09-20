@@ -73,8 +73,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 func NewVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	cfg, err := prepareVaultConfig(conf)
 	if err != nil {
-		log.Debug("Error while preparing vault Config")
-		return nil, err
+		return nil, fmt.Errorf("error in vault config, %v", err)
 	}
 
 	c, err := api.NewClient(cfg)
@@ -178,58 +177,15 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 	return
 }
 
-func (vc *VaultClient) JoinRaftCluster(podip string, leaderaddress string) error {
-
-	address := fmt.Sprintf("http://%s:8200", podip)
-
-	// Set the Vault client address
-	if err := vc.c.SetAddress(address); err != nil {
-		vc.log.Debug("failed to set Vault client address: %v", err)
-		return err
-	}
-
-	vc.log.Debugf("Address: %s", address)
-
+func (vc *VaultClient) JoinRaftCluster(leaderAddress string) error {
 	req := &api.RaftJoinRequest{
 		Retry:         true,
-		LeaderAPIAddr: leaderaddress,
-		
+		LeaderAPIAddr: leaderAddress,
 	}
-
-
 
 	_, err := vc.c.Sys().RaftJoin(req)
 	if err != nil {
 		return fmt.Errorf("failed to join the Raft cluster: %v", err)
 	}
-
 	return nil
-}
-
-func (vc *VaultClient) LeaderAPIAddr(podip string) (string, error) {
-	address := fmt.Sprintf("http://%s:8200", podip)
-
-	if err := vc.c.SetAddress(address); err != nil {
-		vc.log.Debug("failed to set Vault client address: %v", err)
-		return "", err
-	}
-
-	
-
-	leaderInfo, err := vc.c.Sys().Leader()
-	if err != nil {
-		vc.log.Error("failed to retrieve leader information: %v", err)
-		return "", err
-	}
-
-	vc.log.Debugf("Leader address: %s", leaderInfo.LeaderAddress)
-
-	if leaderInfo.LeaderAddress == "" {
-
-		vc.log.Debug("Leader address is empty")
-	}
-	leaderaddress := leaderInfo.LeaderAddress
-
-	return leaderaddress, nil
-
 }

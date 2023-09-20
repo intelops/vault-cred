@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"sort"
 	"strings"
 	"time"
 
@@ -14,9 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
-const (
-	labelSelector = "app.kubernetes.io/name=vault"
-)
+
 type K8SClient struct {
 	client *kubernetes.Clientset
 	log    logging.Logger
@@ -134,26 +131,4 @@ func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (
 		}
 	}
 	return allConfigMapData, nil
-}
-
-func (k *K8SClient) GetVaultPodInstances(ctx context.Context) ([]string, error) {
-	var podnames []string
-
-
-	pods, err := k.client.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labelSelector,
-	})
-	if err != nil {
-		return nil,errors.WithMessage(err, "error while retrieving the pods ")
-	}
-
-
-	for _, pod := range pods.Items {
-		podnames = append(podnames, pod.Name)
-		
-
-	}
-	sort.Strings(podnames)
-	
-	return podnames,nil
 }

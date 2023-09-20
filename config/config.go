@@ -16,20 +16,18 @@ type Configuration struct {
 
 type VaultEnv struct {
 	HAEnabled                  bool          `envconfig:"HA_ENABLED" default:"true"`
-	Address                    string        `envconfig:"VAULT_ADDR" default:"http://vault-hash-0:8200"`
-	Address2                   string        `envconfig:"VAULT_ADDR2" default:"http://vault-hash-1:8200"`
-	Adddress3                  string        `envconfig:"VAULT_ADDR3" default:"http://vault-hash-2:8200"`
+	Address                    string        `envconfig:"VAULT_ADDR" required:"true"`
+	NodeAddresses              []string      `envconfig:"VAULT_NODE_ADDRESSES" required:"true"`
 	CACert                     string        `envconfig:"VAULT_CACERT" required:"false"`
 	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
 	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
 	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
 	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-server"`
-	VaultSecretNameSpace       string        `envconfig:"POD_NAMESPACE" default:"default" required:"true"`
+	VaultSecretNameSpace       string        `envconfig:"POD_NAMESPACE" required:"true"`
 	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"root-token"`
 	VaultSecretUnSealKeyPrefix string        `envconfig:"VAULT_SECRET_UNSEAL_KEY_PREFIX" default:"unsealkey"`
 	VaultToken                 string        `envconfig:"VAULT_TOKEN"`
 	VaultCredSyncSecretName    string        `envconfig:"VAULT_CRED_SYNC_SECRET_NAME" default:"vault-cred-sync-data"`
-    LeaderPodIp string 
 }
 
 func FetchConfiguration() (Configuration, error) {

@@ -125,17 +125,3 @@ func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 	}
 	return rootToken, unsealKeys, nil
 }
-
-func (vc *VaultClient) IsVaultSealedForAllInstances(svc string) (bool, error) {
-	address := fmt.Sprintf("http://%s:8200", svc)
-	err := vc.c.SetAddress(address)
-
-	if err != nil {
-		vc.log.Errorf("Error while setting address")
-	}
-	status, err := vc.c.Sys().SealStatus()
-	if err != nil {
-		return false, err
-	}
-	return status.Sealed, nil
-}

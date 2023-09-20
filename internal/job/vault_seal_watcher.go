@@ -1,7 +1,7 @@
 package job
 
 import (
-	"context"
+	"fmt"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
@@ -31,139 +31,119 @@ func (v *VaultSealWatcher) CronSpec() string {
 }
 
 func (v *VaultSealWatcher) Run() {
-	v.log.Debug("started vault seal watcher job")
+	v.log.Debugf("started vault seal watcher job with vault HA: %v", v.conf.HAEnabled)
 
 	if v.conf.HAEnabled {
-		v.log.Infof(" Vault HA ENABLED", v.conf.HAEnabled)
-		err := v.Unseal_HA_Enabled()
-		if err != nil {
-			v.log.Errorf("%s", err)
+		if len(v.conf.NodeAddresses) != 3 {
+			v.log.Errorf("vault HA node count %d is not valid", len(v.conf.NodeAddresses))
 			return
 		}
 
+		if err := v.handleUnsealForHAVault(); err != nil {
+			v.log.Errorf("%s", err)
+		}
 	} else {
-		vc, err := client.NewVaultClient(v.log, v.conf)
-		if err != nil {
+		if err := v.handleUnsealForNonHAVault(); err != nil {
 			v.log.Errorf("%s", err)
-			return
-		}
-
-		res, err := vc.IsVaultSealed()
-		if err != nil {
-			v.log.Errorf("failed to get vault seal status, %s", err)
-			return
-		}
-
-		if res {
-			v.log.Info("vault is sealed, trying to unseal")
-			err := vc.Unseal()
-			if err != nil {
-				v.log.Errorf("failed to unseal vault, %s", err)
-				return
-			}
-			v.log.Info("vault unsealed executed")
-
-			res, err := vc.IsVaultSealed()
-			if err != nil {
-				v.log.Errorf("failed to get vault seal status, %s", err)
-				return
-			}
-			v.log.Infof("vault sealed status: %v", res)
-			return
-		} else {
-			v.log.Debug("vault is in unsealed status")
 		}
 	}
 }
-func (v *VaultSealWatcher) Unseal_HA_Enabled() error {
 
-	addresses := []string{
-		v.conf.Address,
-		v.conf.Address2,
-		v.conf.Adddress3,
-	}
-	k8sclient, err := client.NewK8SClient(v.log)
+func (v *VaultSealWatcher) handleUnsealForNonHAVault() error {
+	vc, err := client.NewVaultClient(v.log, v.conf)
 	if err != nil {
-		v.log.Errorf("Error while connecting with k8s %s", err)
-		return err
-	}
-	podname, err := k8sclient.GetVaultPodInstances(context.Background())
-	if err != nil {
-		v.log.Errorf("Error while retrieving vault instances %s", err)
 		return err
 	}
 
-	var vc *client.VaultClient
+	res, err := vc.IsVaultSealed()
+	if err != nil {
+		return fmt.Errorf("failed to get vault seal status, %s", err)
+	}
 
-	var vaultClients []*client.VaultClient
-	for _, address := range addresses {
-		conf := v.conf
-		conf.Address = address
-		vc, err := client.NewVaultClient(v.log, conf)
-
+	if res {
+		v.log.Info("vault is sealed, trying to unseal")
+		err := vc.Unseal()
 		if err != nil {
-			v.log.Errorf("%s", err)
+			return fmt.Errorf("failed to unseal vault, %s", err)
+		}
+		v.log.Info("vault unsealed executed")
+
+		res, err := vc.IsVaultSealed()
+		if err != nil {
+			return fmt.Errorf("failed to get vault seal status, %s", err)
+		}
+		v.log.Infof("vault sealed status: %v", res)
+	} else {
+		v.log.Debug("vault is in unsealed status")
+	}
+	return nil
+}
+
+func (v *VaultSealWatcher) handleUnsealForHAVault() error {
+	var vaultClients []*client.VaultClient
+	for _, nodeAddress := range v.conf.NodeAddresses {
+		conf := v.conf
+		conf.Address = nodeAddress
+		vc, err := client.NewVaultClient(v.log, conf)
+		if err != nil {
 			return err
 		}
 
 		vaultClients = append(vaultClients, vc)
 	}
 
-	for i, svc := range podname {
+	allSealed, err := v.isAllNodesSealed(vaultClients)
+	if err != nil {
+		return err
+	}
 
-		vc = vaultClients[i]
-
-		res, err := vc.IsVaultSealedForAllInstances(svc)
+	if allSealed {
+		v.log.Info("vault is sealed for all nodes")
+		err = vaultClients[0].Unseal()
 		if err != nil {
-			v.log.Errorf("failed to get vault seal status, %s", err)
-			return err
-		}
-		v.log.Info("Seal Status for  %v", svc, res)
-		if res {
-
-			if i == 0 {
-
-				v.log.Info("Unsealing for first instance")
-
-				v.conf.LeaderPodIp = svc
-
-				if err != nil {
-					v.log.Errorf("failed to retrieve pod ip, %s", err)
-					return err
-				}
-				err = vc.Unseal()
-				if err != nil {
-					v.log.Errorf("failed to unseal vault, %s", err)
-					return err
-				}
-
-			} else {
-
-				leaderaddr, err := vc.LeaderAPIAddr(v.conf.LeaderPodIp)
-				if err != nil {
-					v.log.Errorf("failed to retrieve leader address, %s", err)
-					return err
-				}
-				v.log.Debug("Leader Address", leaderaddr)
-
-				v.log.Infof("Unsealing for  %v instance", podname)
-
-				err = vc.JoinRaftCluster(svc, leaderaddr)
-				if err != nil {
-					v.log.Errorf("Failed to join the HA cluster: %v\n", err)
-					return err
-
-				}
-				err = vc.Unseal()
-				if err != nil {
-					v.log.Errorf("failed to unseal vault, %s", err)
-					return err
-				}
-
-			}
-
+			return fmt.Errorf("failed to unseal vault for leader node, %v", err)
 		}
 
+		err = vaultClients[1].JoinRaftCluster(v.conf.NodeAddresses[0])
+		if err != nil {
+			return fmt.Errorf("failed to join the HA cluster by 2nd node, %v", err)
+		}
+
+		err = vaultClients[1].Unseal()
+		if err != nil {
+			return fmt.Errorf("failed to unseal vault for 2nd node, %v", err)
+		}
+
+		err = vaultClients[2].JoinRaftCluster(v.conf.NodeAddresses[0])
+		if err != nil {
+			return fmt.Errorf("failed to join the HA cluster by 3rd node, %v", err)
+		}
+
+		err = vaultClients[2].Unseal()
+		if err != nil {
+			return fmt.Errorf("failed to unseal vault for 3rd node, %v", err)
+		}
+
+		v.log.Info("vault is unsealed for all nodes")
+	} else {
+		v.log.Info("some vault nodes are sealed")
 	}
 	return nil
+}
+
+func (v *VaultSealWatcher) isAllNodesSealed(vaultClients []*client.VaultClient) (bool, error) {
+	status := false
+	for _, vc := range vaultClients {
+		res, err := vc.IsVaultSealed()
+		if err != nil {
+			return false, fmt.Errorf("failed to get vault seal status for %s, %v", v.conf.Address, err)
+		}
+
+		if !res {
+			return false, nil
+		}
+		v.log.Info("vault node %s is sealed", v.conf.Address)
+		status = res
+	}
+	return status, nil
 }
