@@ -183,9 +183,10 @@ func (vc *VaultClient) JoinRaftCluster(leaderAddress string) error {
 		LeaderAPIAddr: leaderAddress,
 	}
 
-	_, err := vc.c.Sys().RaftJoin(req)
+	res, err := vc.c.Sys().RaftJoin(req)
 	if err != nil {
 		return fmt.Errorf("failed to join the Raft cluster: %v", err)
 	}
+	vc.log.Debug("Raft Joined status", res.Joined)
 	return nil
 }
