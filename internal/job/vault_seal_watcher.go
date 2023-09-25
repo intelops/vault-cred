@@ -81,7 +81,6 @@ func (v *VaultSealWatcher) handleUnsealForNonHAVault() error {
 
 func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 	var vaultClients []*client.VaultClient
-	//var sealed bool
 	for _, nodeAddress := range v.conf.NodeAddresses {
 		conf := v.conf
 		conf.Address = nodeAddress
@@ -92,33 +91,59 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 
 		vaultClients = append(vaultClients, vc)
 	}
-	for _, vc := range vaultClients {
-		sealed, err := vc.IsVaultSealed()
-		if err != nil {
-			return err
-		}
-		if sealed {
-			switch vc {
-			case vaultClients[0]:
-				err = vc.Unseal()
-				if err != nil {
-					return fmt.Errorf("failed to unseal vault for leader node, %v", err)
-				}
-			default:
-				err = vc.JoinRaftCluster(v.conf.NodeAddresses[0])
-				if err != nil {
-					return fmt.Errorf("failed to join the HA cluster, %v", err)
-				}
 
-				err = vc.Unseal()
-				if err != nil {
-					return fmt.Errorf("failed to unseal vault, %v", err)
-				}
-			}
-
-		}
-
+	allSealed, err := v.isAllNodesSealed(vaultClients)
+	if err != nil {
+		return err
 	}
 
+	if allSealed {
+		v.log.Info("vault is sealed for all nodes")
+		err = vaultClients[0].Unseal()
+		if err != nil {
+			return fmt.Errorf("failed to unseal vault for leader node, %v", err)
+		}
+
+		err = vaultClients[1].JoinRaftCluster(v.conf.NodeAddresses[0])
+		if err != nil {
+			return fmt.Errorf("failed to join the HA cluster by 2nd node, %v", err)
+		}
+
+		err = vaultClients[1].Unseal()
+		if err != nil {
+			return fmt.Errorf("failed to unseal vault for 2nd node, %v", err)
+		}
+
+		err = vaultClients[2].JoinRaftCluster(v.conf.NodeAddresses[0])
+		if err != nil {
+			return fmt.Errorf("failed to join the HA cluster by 3rd node, %v", err)
+		}
+
+		err = vaultClients[2].Unseal()
+		if err != nil {
+			return fmt.Errorf("failed to unseal vault for 3rd node, %v", err)
+		}
+
+		v.log.Info("vault is unsealed for all nodes")
+	} else {
+		v.log.Info("some vault nodes are sealed")
+	}
 	return nil
+}
+
+func (v *VaultSealWatcher) isAllNodesSealed(vaultClients []*client.VaultClient) (bool, error) {
+	status := false
+	for _, vc := range vaultClients {
+		res, err := vc.IsVaultSealed()
+		if err != nil {
+			return false, fmt.Errorf("failed to get vault seal status for %s, %v", v.conf.Address, err)
+		}
+
+		if !res {
+			return false, nil
+		}
+		v.log.Info("vault node %s is sealed", v.conf.Address)
+		status = res
+	}
+	return status, nil
 }
