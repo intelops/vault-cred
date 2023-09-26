@@ -83,6 +83,7 @@ func (v *VaultSealWatcher) handleUnsealForNonHAVault() error {
 	return nil
 }
 
+
 func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 	var vaultClients []*client.VaultClient
 	for _, nodeAddress := range v.conf.NodeAddresses {
@@ -99,6 +100,7 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 	for _, vc := range vaultClients {
 		if leader, err := vc.Leader(); err == nil && leader != "" {
 			leaderNode = leader
+			leaderCreated = true
 		}
 	}
 	v.log.Info("Found leader node: %v", leaderNode)
@@ -112,8 +114,7 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 			v.log.Info("Node-%v successfully joined leader: %v", index, leaderNode)
 		}
 
-		err := vc.Unseal()
-		if err != nil {
+		if err := vc.Unseal(); err != nil {
 			return fmt.Errorf("failed to unseal vault for node index: %v, error: %v", index, err)
 		}
 		v.log.Info("Node-%v successfully Unsealed", index)
