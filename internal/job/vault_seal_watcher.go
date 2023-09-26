@@ -95,24 +95,28 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 		vaultClients = append(vaultClients, vc)
 	}
 
-	for index, vc := range vaultClients {
-		leaderNode := v.conf.LeaderAPIAddr
-
+	leaderNode := v.conf.LeaderAPIAddr
+	for _, vc := range vaultClients {
 		if leader, err := vc.Leader(); err == nil && leader != "" {
 			leaderNode = leader
 		}
+	}
+	v.log.Info("Found leader node: %v", leaderNode)
 
+	for index, vc := range vaultClients {
 		if leaderCreated {
 			err := vc.JoinRaftCluster(leaderNode)
 			if err != nil {
-				return fmt.Errorf("failed to join the HA cluster by node index: %v, %v", index+1, err)
+				return fmt.Errorf("failed to join the HA cluster by node index: %v, error: %v", index, err)
 			}
+			v.log.Info("Node-%v successfully joined leader: %v", index, leaderNode)
 		}
 
 		err := vc.Unseal()
 		if err != nil {
-			return fmt.Errorf("failed to unseal vault for node index: %v, %v", index+1, err)
+			return fmt.Errorf("failed to unseal vault for node index: %v, error: %v", index, err)
 		}
+		v.log.Info("Node-%v successfully Unsealed", index)
 		leaderCreated = true
 	}
 
