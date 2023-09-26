@@ -96,6 +96,14 @@ func (vc *VaultClient) generateUnsealKeys() ([]string, string, error) {
 	return unsealKeys, rootToken, err
 }
 
+func (vc *VaultClient) Leader() (string, error) {
+	res, err := vc.c.Sys().Leader()
+	if err != nil {
+		return "", err
+	}
+	return res.LeaderAddress, nil
+}
+
 func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {
 	k8s, err := NewK8SClient(vc.log)
 	if err != nil {

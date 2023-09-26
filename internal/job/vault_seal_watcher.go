@@ -8,6 +8,10 @@ import (
 	"github.com/intelops/vault-cred/internal/client"
 )
 
+// this var is set to true after leader created for the very first time
+// remove this later, after learning the correct usecase of Leader() api
+var leaderCreated bool
+
 type VaultSealWatcher struct {
 	log       logging.Logger
 	conf      config.VaultEnv
@@ -80,71 +84,38 @@ func (v *VaultSealWatcher) handleUnsealForNonHAVault() error {
 }
 
 func (v *VaultSealWatcher) handleUnsealForHAVault() error {
-	var followerClients []*client.VaultClient
-	var leaderVaultClients []*client.VaultClient
-	for index, nodeAddress := range v.conf.NodeAddresses {
+	var vaultClients []*client.VaultClient
+	for _, nodeAddress := range v.conf.NodeAddresses {
 		conf := v.conf
 		conf.Address = nodeAddress
 		vc, err := client.NewVaultClient(v.log, conf)
 		if err != nil {
 			return err
 		}
-		// assuming that first node address is the leader
-		// Todo: keep leaders and followers in the configuration separate
-		if index == 0 {
-			leaderVaultClients = append(leaderVaultClients, vc)
-		} else {
-			followerClients = append(followerClients, vc)
+		vaultClients = append(vaultClients, vc)
+	}
+
+	leaderNode := v.conf.LeaderAPIAddr
+	for _, vc := range vaultClients {
+		if leader, err := vc.Leader(); err == nil && leader != "" {
+			leaderNode = leader
 		}
 	}
 
-	if leaderSealed, err := v.areNodesSealed(leaderVaultClients); err != nil {
-		return err
-	} else if leaderSealed {
-		v.log.Info("vault is sealed for leader nodes")
-		for _, vc := range leaderVaultClients {
-			err = vc.Unseal()
-			if err != nil {
-				return fmt.Errorf("failed to unseal vault for leader node, %v", err)
-			}
-		}
-	}
-
-	if followersSealed, err := v.areNodesSealed(followerClients); err != nil {
-		return err
-	} else if followersSealed {
-		for index, vc := range followerClients {
-			err = vc.JoinRaftCluster(v.conf.LeaderAPIAddr)
+	for index, vc := range vaultClients {
+		if leaderCreated {
+			err := vc.JoinRaftCluster(leaderNode)
 			if err != nil {
 				return fmt.Errorf("failed to join the HA cluster by node index: %v, %v", index+1, err)
 			}
-
-			err = vc.Unseal()
-			if err != nil {
-				return fmt.Errorf("failed to unseal vault for node index: %v, %v", index+1, err)
-			}
 		}
 
+		err := vc.Unseal()
+		if err != nil {
+			return fmt.Errorf("failed to unseal vault for node index: %v, %v", index+1, err)
+		}
+		leaderCreated = true
 	}
 
 	return nil
-}
-
-func (v *VaultSealWatcher) areNodesSealed(vaultClients []*client.VaultClient) (bool, error) {
-	status := false
-	for _, vc := range vaultClients {
-		res, err := vc.IsVaultSealed()
-		v.log.Info("unseal status for %v is %v", vc, res)
-		if err != nil {
-			return false, fmt.Errorf("failed to get vault seal status for %s, %v", v.conf.Address, err)
-		}
-
-		if !res {
-			return false, nil
-		} else {
-			v.log.Info("vault node %s is sealed", v.conf.Address)
-		}
-		status = res
-	}
-	return status, nil
 }
