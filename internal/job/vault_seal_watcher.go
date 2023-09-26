@@ -95,14 +95,13 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 		vaultClients = append(vaultClients, vc)
 	}
 
-	leaderNode := v.conf.LeaderAPIAddr
-	for _, vc := range vaultClients {
+	for index, vc := range vaultClients {
+		leaderNode := v.conf.LeaderAPIAddr
+
 		if leader, err := vc.Leader(); err == nil && leader != "" {
 			leaderNode = leader
 		}
-	}
 
-	for index, vc := range vaultClients {
 		if leaderCreated {
 			err := vc.JoinRaftCluster(leaderNode)
 			if err != nil {
