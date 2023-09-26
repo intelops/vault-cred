@@ -43,6 +43,8 @@ spec:
               value: "{{ .Values.env.logLevel }}"
             - name: VAULT_ADDR
               value: "{{ .Values.vault.vaultAddress }}"
+            - name: VAULT_LEADER_ADDRESS
+              value: "{{ .Values.vault.vaultLeaderAddress }}"
             - name: VAULT_NODE_ADDRESSES
               value: "{{ .Values.vault.vaultNodeAddresses }}"
             - name: HA_ENABLED

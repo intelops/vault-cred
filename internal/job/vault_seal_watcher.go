@@ -104,7 +104,7 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 			return fmt.Errorf("failed to unseal vault for leader node, %v", err)
 		}
 
-		err = vaultClients[1].JoinRaftCluster(v.conf.NodeAddresses[0])
+		err = vaultClients[1].JoinRaftCluster(v.conf.LeaderAPIAddr)
 		if err != nil {
 			return fmt.Errorf("failed to join the HA cluster by 2nd node, %v", err)
 		}
@@ -114,7 +114,7 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 			return fmt.Errorf("failed to unseal vault for 2nd node, %v", err)
 		}
 
-		err = vaultClients[2].JoinRaftCluster(v.conf.NodeAddresses[0])
+		err = vaultClients[2].JoinRaftCluster(v.conf.LeaderAPIAddr)
 		if err != nil {
 			return fmt.Errorf("failed to join the HA cluster by 3rd node, %v", err)
 		}
@@ -126,7 +126,9 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 
 		v.log.Info("vault is unsealed for all nodes")
 	} else {
+
 		v.log.Info("some vault nodes are sealed")
+
 	}
 	return nil
 }
@@ -135,14 +137,17 @@ func (v *VaultSealWatcher) isAllNodesSealed(vaultClients []*client.VaultClient) 
 	status := false
 	for _, vc := range vaultClients {
 		res, err := vc.IsVaultSealed()
+		v.log.Info("unseal status for %v is %v", vc, res)
 		if err != nil {
 			return false, fmt.Errorf("failed to get vault seal status for %s, %v", v.conf.Address, err)
 		}
 
 		if !res {
 			return false, nil
+		} else {
+			v.log.Info("vault node %s is sealed", v.conf.Address)
 		}
-		v.log.Info("vault node %s is sealed", v.conf.Address)
+
 		status = res
 	}
 	return status, nil
