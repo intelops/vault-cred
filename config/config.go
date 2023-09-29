@@ -18,7 +18,7 @@ type VaultEnv struct {
 	HAEnabled                  bool          `envconfig:"HA_ENABLED" default:"true"`
 	Address                    string        `envconfig:"VAULT_ADDR" required:"true"`
 	NodeAddresses              []string      `envconfig:"VAULT_NODE_ADDRESSES" required:"true"`
-	LeaderAPIAddr              string        `envconfig:"VAULT_LEADER_ADDRESS" required:"true"`
+//	LeaderAPIAddr              string        `envconfig:"VAULT_LEADER_ADDRESS" required:"true"`
 	CACert                     string        `envconfig:"VAULT_CACERT" required:"false"`
 	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
 	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`

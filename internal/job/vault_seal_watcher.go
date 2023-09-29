@@ -86,6 +86,7 @@ func (v *VaultSealWatcher) handleUnsealForNonHAVault() error {
 
 func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 	var vaultClients []*client.VaultClient
+	var leaderNode string
 	for _, nodeAddress := range v.conf.NodeAddresses {
 		conf := v.conf
 		conf.Address = nodeAddress
@@ -96,7 +97,7 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 		vaultClients = append(vaultClients, vc)
 	}
 
-	leaderNode := v.conf.LeaderAPIAddr
+
 	for _, vc := range vaultClients {
 		if leader, err := vc.Leader(); err == nil && leader != "" {
 			leaderNode = leader
