@@ -83,10 +83,8 @@ func (v *VaultSealWatcher) handleUnsealForNonHAVault() error {
 	return nil
 }
 
-
 func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 	var vaultClients []*client.VaultClient
-	var leaderNode string
 	for _, nodeAddress := range v.conf.NodeAddresses {
 		conf := v.conf
 		conf.Address = nodeAddress
@@ -97,30 +95,56 @@ func (v *VaultSealWatcher) handleUnsealForHAVault() error {
 		vaultClients = append(vaultClients, vc)
 	}
 
+	sealed, err := v.isAnyNodeSealed(vaultClients)
+	if err != nil {
+		return err
+	}
 
+	if !sealed {
+		v.log.Debug("All nodes are unsealed")
+		return nil
+	}
+
+	var leaderNode string
 	for _, vc := range vaultClients {
 		if leader, err := vc.Leader(); err == nil && leader != "" {
 			leaderNode = leader
-			leaderCreated = true
+			break
 		}
 	}
-	v.log.Info("Found leader node: %v", leaderNode)
+	v.log.Infof("Found leader node: %v", leaderNode)
 
 	for index, vc := range vaultClients {
-		if leaderCreated {
+		if len(leaderNode) > 0 {
 			err := vc.JoinRaftCluster(leaderNode)
 			if err != nil {
 				return fmt.Errorf("failed to join the HA cluster by node index: %v, error: %v", index, err)
 			}
-			v.log.Info("Node-%v successfully joined leader: %v", index, leaderNode)
+			v.log.Info("Node %s joined leader %s", v.conf.Address, leaderNode)
 		}
 
 		if err := vc.Unseal(); err != nil {
-			return fmt.Errorf("failed to unseal vault for node index: %v, error: %v", index, err)
+			return fmt.Errorf("failed to unseal vault on node %s, %v", v.conf.Address, err)
 		}
-		v.log.Info("Node-%v successfully Unsealed", index)
-		leaderCreated = true
-	}
 
+		v.log.Info("Node %s successfully Unsealed", v.conf.Address)
+	}
 	return nil
+}
+
+func (v *VaultSealWatcher) isAnyNodeSealed(vaultClients []*client.VaultClient) (bool, error) {
+	sealedStatus := false
+	for _, vc := range vaultClients {
+		res, err := vc.IsVaultSealed()
+		if err != nil {
+			return false, fmt.Errorf("failed to get vault seal status for %s, %v", v.conf.Address, err)
+		}
+
+		if res {
+			sealedStatus = true
+		}
+
+		v.log.Debugf("vault node %s seal status %s", v.conf.Address, res)
+	}
+	return sealedStatus, nil
 }

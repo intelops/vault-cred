@@ -44,7 +44,7 @@ env:
   logLevel: info
 
 vault:
-  haenabled: true
+  haEnabled: true
   vaultAddress: http://vault-hash:8200
   vaultLeaderAddress: vault-hash-0.vault-hash-internal:8200
   vaultNodeAddresses: "http://vault-hash-0:8200,http://vault-hash-1:8200,http://vault-hash-2:8200"

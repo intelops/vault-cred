@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	//"encoding/base64"
 	"fmt"
 	"strings"
 
