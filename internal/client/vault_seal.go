@@ -18,6 +18,7 @@ func (vc *VaultClient) IsVaultSealed() (bool, error) {
 }
 
 func (vc *VaultClient) Unseal() error {
+
 	status, err := vc.c.Sys().SealStatus()
 	if err != nil {
 		return err
@@ -51,7 +52,9 @@ func (vc *VaultClient) Unseal() error {
 }
 
 func (vc *VaultClient) initializeVaultSecret() error {
+
 	unsealKeys, rootToken, err := vc.generateUnsealKeys()
+
 	if err != nil {
 		return errors.WithMessage(err, "error while generating unseal keys")
 	}
@@ -90,6 +93,14 @@ func (vc *VaultClient) generateUnsealKeys() ([]string, string, error) {
 	unsealKeys = append(unsealKeys, initRes.Keys...)
 	rootToken := initRes.RootToken
 	return unsealKeys, rootToken, err
+}
+
+func (vc *VaultClient) Leader() (string, error) {
+	res, err := vc.c.Sys().Leader()
+	if err != nil {
+		return "", err
+	}
+	return res.LeaderAddress, nil
 }
 
 func (vc *VaultClient) getVaultSecretValues() (string, []string, error) {

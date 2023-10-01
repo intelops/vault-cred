@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/vault/api"
@@ -72,7 +73,7 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 func NewVaultClient(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	cfg, err := prepareVaultConfig(conf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in vault config, %v", err)
 	}
 
 	c, err := api.NewClient(cfg)
@@ -174,4 +175,18 @@ func (vc *VaultClient) DeleteCredential(ctx context.Context, mountPath, secretPa
 		err = errors.WithMessagef(err, "error in deleting credentail at %s", secretPath)
 	}
 	return
+}
+
+func (vc *VaultClient) JoinRaftCluster(leaderAddress string) error {
+	req := &api.RaftJoinRequest{
+		Retry:         true,
+		LeaderAPIAddr: leaderAddress,
+	}
+
+	res, err := vc.c.Sys().RaftJoin(req)
+	if err != nil {
+		return fmt.Errorf("failed to join the Raft cluster: %v", err)
+	}
+	vc.log.Debug("Raft Joined status", res.Joined)
+	return nil
 }
