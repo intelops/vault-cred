@@ -23,7 +23,7 @@ To store any sensitive data like service-based credentials (username,Password),c
 - [License](#license)
 - [Join our Slack channel](#join-our-slack-channel)
 
-## How to install and run Kubviz
+## How to install and run vault-cred
 
 ```bash
 git clone git@github.com:intelops/vault-cred.git && cd vault-cred/charts/vault-cred
