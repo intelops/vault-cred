@@ -121,6 +121,11 @@ func (v *VaultCredSync) Run() {
 			v.log.Infof("credentail type %s not supported", key)
 		}
 	}
+	// After successfully syncing data to Vault, delete the Kubernetes Secret.
+
+	if err = k8s.DeleteKubernetesSecret(ctx, v.conf.VaultCredSyncSecretName, v.conf.VaultSecretNameSpace); err != nil {
+		v.log.Errorf("failed to delete Kubernetes Secret: %s", err)
+	}
 
 	updateTime := secretValues.LastUpdatedTime.Add(0)
 	v.lastUpdatedTime = &updateTime
