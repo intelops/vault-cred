@@ -11,6 +11,6 @@ data:
 kind: Secret
 metadata:
   name: vault-cred-sync-data
-  namespace: "ml-server"
+  namespace: "platform"
 type: Opaque
 # 
