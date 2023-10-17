@@ -123,6 +123,7 @@ func (v *VaultCredSync) Run() {
 			}
 		} else {
 			v.log.Infof("credentail type %s not supported", key)
+			allDataStored = false
 		}
 	}
 
