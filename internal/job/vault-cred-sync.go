@@ -70,6 +70,7 @@ func (v *VaultCredSync) CronSpec() string {
 
 func (v *VaultCredSync) Run() {
 	v.log.Debug("started vault credential sync job")
+	allDataStored := true
 
 	k8s, err := client.NewK8SClient(v.log)
 	if err != nil {
@@ -102,18 +103,21 @@ func (v *VaultCredSync) Run() {
 		if strings.HasPrefix(key, serviceCredSecretKeyPrefix) {
 			err = v.storeServiceCredential(ctx, vc, key, secretValue)
 			if err != nil {
+				allDataStored = false
 				v.log.Errorf("%s", err)
 				continue
 			}
 		} else if strings.HasPrefix(key, certSecretKeyPrefix) {
 			err = v.storeCertData(ctx, vc, key, secretValue)
 			if err != nil {
+				allDataStored = false
 				v.log.Errorf("%s", err)
 				continue
 			}
 		} else if strings.HasPrefix(key, genericSecretKeyPrefix) {
 			err = v.storeGenericCredential(ctx, vc, key, secretValue)
 			if err != nil {
+				allDataStored = false
 				v.log.Errorf("%s", err)
 				continue
 			}
@@ -121,10 +125,13 @@ func (v *VaultCredSync) Run() {
 			v.log.Infof("credentail type %s not supported", key)
 		}
 	}
-	// After successfully syncing data to Vault, delete the Kubernetes Secret.
 
-	if err = k8s.DeleteKubernetesSecret(ctx, v.conf.VaultCredSyncSecretName, v.conf.VaultSecretNameSpace); err != nil {
-		v.log.Errorf("failed to delete Kubernetes Secret: %s", err)
+	if allDataStored {
+		if err = k8s.DeleteKubernetesSecret(ctx, v.conf.VaultCredSyncSecretName, v.conf.VaultSecretNameSpace); err != nil {
+			v.log.Errorf("failed to delete Kubernetes Secret: %s", err)
+		}
+	} else {
+		v.log.Error("Not all data was successfully stored, Kubernetes Secret will not be deleted.")
 	}
 
 	updateTime := secretValues.LastUpdatedTime.Add(0)
