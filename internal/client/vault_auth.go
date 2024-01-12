@@ -1,6 +1,8 @@
 package client
 
 import (
+	"strings"
+
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -81,4 +83,29 @@ func (v *VaultClient) loadK8SConfigData() (map[string]interface{}, error) {
 		"token_reviewer_jwt":         config.BearerToken,
 		"kubernetes_skip_tls_verify": "true",
 	}, nil
+}
+
+func (v *VaultClient) EnableAppRoleAuth() error {
+	err := v.c.Sys().EnableAuth("approle", "approle", "")
+	if err != nil && strings.Contains(err.Error(), "already in use") {
+		return nil
+	}
+	return err
+}
+
+func (v *VaultClient) CreateAppRole(roleName string) (string, string, error) {
+	roleIDResponse, err := v.c.Logical().Read("auth/approle/role/" + roleName + "/role-id")
+	if err != nil {
+		return "", "", err
+	}
+
+	secretIDResponse, err := v.c.Logical().Write("auth/approle/role/"+roleName+"/secret-id", nil)
+	if err != nil {
+		return "", "", err
+	}
+
+	roleID := roleIDResponse.Data["role_id"].(string)
+	secretID := secretIDResponse.Data["secret_id"].(string)
+
+	return roleID, secretID, nil
 }
