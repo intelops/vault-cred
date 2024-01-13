@@ -12,6 +12,8 @@ service VaultCred {
   rpc GetCred (GetCredRequest) returns (GetCredResponse) {};
   rpc PutCred (PutCredRequest) returns (PutCredResponse) {};
   rpc DeleteCred (DeleteCredRequest) returns (DeleteCredResponse) {};
+  rpc GetAppRoleToken(GetAppRoleTokenRequest) returns (GetAppRoleTokenResponse) {};
+  rpc GetCredentialWithAppRoleToken(GetCredentialWithAppRoleTokenRequest) returns (GetCredentialWithAppRoleTokenResponse) {};
 }
 
 message GetCredRequest {
@@ -45,4 +47,22 @@ message DeleteCredRequest {
 }
 
 message DeleteCredResponse {
+}
+
+message GetAppRoleTokenRequest {
+   string appRoleName = 1;
+   string credentialPath = 2;      
+}
+
+message GetAppRoleTokenResponse {
+   string token = 1;
+}
+
+message GetCredentialWithAppRoleTokenRequest {
+   string token = 1;
+   string credentialPath = 2;
+}
+
+message GetCredentialWithAppRoleTokenResponse {
+   map<string, string> credential = 1;
 }

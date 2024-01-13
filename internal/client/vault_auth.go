@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/vault/api"
@@ -93,7 +94,7 @@ func (v *VaultClient) EnableAppRoleAuth() error {
 	return err
 }
 
-func (v *VaultClient) CreateAppRole(roleName string) (string, string, error) {
+func (v *VaultClient) createOrUpdateAppRole(roleName string) (string, string, error) {
 	roleIDResponse, err := v.c.Logical().Read("auth/approle/role/" + roleName + "/role-id")
 	if err != nil {
 		return "", "", err
@@ -108,4 +109,27 @@ func (v *VaultClient) CreateAppRole(roleName string) (string, string, error) {
 	secretID := secretIDResponse.Data["secret_id"].(string)
 
 	return roleID, secretID, nil
+}
+
+func (v *VaultClient) AuthenticateWithAppRole(roleName string) (string, error) {
+	roleID, secretID, err := v.createOrUpdateAppRole(roleName)
+	if err != nil {
+		return "", err
+	}
+
+	data := map[string]interface{}{
+		"role_id":   roleID,
+		"secret_id": secretID,
+	}
+
+	secret, err := v.c.Logical().Write("auth/approle/login", data)
+	if err != nil {
+		return "", err
+	}
+
+	if secret == nil || secret.Auth == nil || secret.Auth.ClientToken == "" {
+		return "", fmt.Errorf("authentication failed")
+	}
+
+	return secret.Auth.ClientToken, nil
 }

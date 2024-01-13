@@ -27,7 +27,7 @@ type VaultClient struct {
 
 func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	if conf.VaultTokenForRequests {
-		return NewVaultClientForVaultToken(log, conf)
+		return NewVaultClientForTokenFromEnv(log, conf)
 	}
 
 	vc, err := NewVaultClient(log, conf)
@@ -42,7 +42,7 @@ func NewVaultClientForServiceAccount(ctx context.Context, log logging.Logger, co
 	return vc, nil
 }
 
-func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
+func NewVaultClientForTokenFromEnv(log logging.Logger, conf config.VaultEnv) (*VaultClient, error) {
 	vc, err := NewVaultClient(log, conf)
 	if err != nil {
 		return nil, err
@@ -67,6 +67,15 @@ func NewVaultClientForVaultToken(log logging.Logger, conf config.VaultEnv) (*Vau
 		return nil, errors.New("vault root token not found")
 	}
 	vc.c.SetToken(rootToken)
+	return vc, nil
+}
+
+func NewVaultClientForToken(log logging.Logger, conf config.VaultEnv, token string) (*VaultClient, error) {
+	vc, err := NewVaultClient(log, conf)
+	if err != nil {
+		return nil, err
+	}
+	vc.c.SetToken(token)
 	return vc, nil
 }
 

@@ -35,7 +35,7 @@ func (v *VaultPolicyWatcher) CronSpec() string {
 
 func (v *VaultPolicyWatcher) Run() {
 	v.log.Debug("started vault policy watcher")
-	vc, err := client.NewVaultClientForVaultToken(v.log, v.conf)
+	vc, err := client.NewVaultClientForTokenFromEnv(v.log, v.conf)
 	if err != nil {
 		v.log.Errorf("%s", err)
 		return

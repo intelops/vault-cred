@@ -88,11 +88,6 @@ func (p *VaultPolicyHandler) UpdateVaultRoles(ctx context.Context, vc *client.Va
 		return err
 	}
 
-	err = vc.EnableAppRoleAuth()
-	if err != nil {
-		return err
-	}
-
 	existingPolicies, err := vc.ListPolicies()
 	if err != nil {
 		return err
