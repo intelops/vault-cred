@@ -52,6 +52,25 @@ func (v *VaultClient) CreateOrUpdateRole(roleName string, serviceAccounts, names
 	return nil
 }
 
+func (v *VaultClient) CreateOrUpdateAppRole(roleName string, policies []string) error {
+	roleData := make(map[string]interface{})
+
+	roleData["policies"] = policies
+	roleData["max_ttl"] = 1800000
+	roleData["secret_id_ttl"] = 0
+	roleData["token_ttl"] = 0
+	roleData["token_max_ttl"] = 0
+
+	path := fmt.Sprintf("/auth/approle/role/%s", roleName)
+	_, err := v.c.Logical().Write(path, roleData)
+	if err != nil {
+		return err
+	}
+
+	v.log.Infof("Updated app role %s", roleName)
+	return nil
+}
+
 func (v *VaultClient) DeleteRole(roleName string) error {
 	path := fmt.Sprintf("/auth/kubernetes/role/%s", roleName)
 	_, err := v.c.Logical().Delete(path)

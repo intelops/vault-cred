@@ -11,6 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	vaultPolicyReadPath = `path "secret/data/%s" {capabilities = ["read"]}`
+)
+
 type VaultCredServ struct {
 	vaultcredpb.UnimplementedVaultCredServer
 	conf config.VaultEnv
@@ -83,4 +87,55 @@ func (v *VaultCredServ) DeleteCred(ctx context.Context, request *vaultcredpb.Del
 
 	v.log.Infof("delete credential request processed for %s", secretPath)
 	return &vaultcredpb.DeleteCredResponse{}, nil
+}
+
+func (v *VaultCredServ) GetAppRoleToken(ctx context.Context, request *vaultcredpb.GetAppRoleTokenRequest) (*vaultcredpb.GetAppRoleTokenResponse, error) {
+	v.log.Infof("app role token request for vault path %s with role %s", request.CredentialPath, request.AppRoleName)
+	vc, err := client.NewVaultClientForTokenFromEnv(v.log, v.conf)
+	if err != nil {
+		return nil, err
+	}
+
+	err = vc.EnableAppRoleAuth()
+	if err != nil {
+		return nil, err
+	}
+
+	policyData := fmt.Sprintf(vaultPolicyReadPath, request.CredentialPath)
+	v.log.Infof("creating policy %s", policyData)
+	policyName := request.AppRoleName + "-policy"
+	err = vc.CreateOrUpdatePolicy(policyName, policyData)
+	if err != nil {
+		v.log.Errorf("error while creating Vault policy for app role %s", request.AppRoleName, err)
+		return nil, err
+	}
+
+	err = vc.CreateOrUpdateAppRole(request.AppRoleName, []string{policyName})
+	if err != nil {
+		v.log.Errorf("error while creating Vault policy for app role %s", request.AppRoleName, err)
+		return nil, err
+	}
+
+	token, err := vc.AuthenticateWithAppRole(request.AppRoleName)
+	if err != nil {
+		return nil, err
+	}
+
+	v.log.Infof("app role token generated for path %s with role %s", request.CredentialPath, request.AppRoleName)
+	return &vaultcredpb.GetAppRoleTokenResponse{Token: token}, nil
+}
+
+func (v *VaultCredServ) GetCredentialWithAppRoleToken(ctx context.Context, request *vaultcredpb.GetCredentialWithAppRoleTokenRequest) (*vaultcredpb.GetCredentialWithAppRoleTokenResponse, error) {
+	vc, err := client.NewVaultClientForToken(v.log, v.conf, request.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	credential, err := vc.GetCredential(ctx, CredentialMountPath(), request.CredentialPath)
+	if err != nil {
+		v.log.Error("app role get credential request failed for %s, %v", request.CredentialPath, err)
+		return nil, err
+	}
+	v.log.Infof("app role get credential request processed for %s", request.CredentialPath)
+	return &vaultcredpb.GetCredentialWithAppRoleTokenResponse{Credential: credential}, nil
 }

@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	VaultCred_GetCred_FullMethodName    = "/vaultcredpb.VaultCred/GetCred"
-	VaultCred_PutCred_FullMethodName    = "/vaultcredpb.VaultCred/PutCred"
-	VaultCred_DeleteCred_FullMethodName = "/vaultcredpb.VaultCred/DeleteCred"
+	VaultCred_GetCred_FullMethodName                       = "/vaultcredpb.VaultCred/GetCred"
+	VaultCred_PutCred_FullMethodName                       = "/vaultcredpb.VaultCred/PutCred"
+	VaultCred_DeleteCred_FullMethodName                    = "/vaultcredpb.VaultCred/DeleteCred"
+	VaultCred_GetAppRoleToken_FullMethodName               = "/vaultcredpb.VaultCred/GetAppRoleToken"
+	VaultCred_GetCredentialWithAppRoleToken_FullMethodName = "/vaultcredpb.VaultCred/GetCredentialWithAppRoleToken"
 )
 
 // VaultCredClient is the client API for VaultCred service.
@@ -36,6 +38,8 @@ type VaultCredClient interface {
 	GetCred(ctx context.Context, in *GetCredRequest, opts ...grpc.CallOption) (*GetCredResponse, error)
 	PutCred(ctx context.Context, in *PutCredRequest, opts ...grpc.CallOption) (*PutCredResponse, error)
 	DeleteCred(ctx context.Context, in *DeleteCredRequest, opts ...grpc.CallOption) (*DeleteCredResponse, error)
+	GetAppRoleToken(ctx context.Context, in *GetAppRoleTokenRequest, opts ...grpc.CallOption) (*GetAppRoleTokenResponse, error)
+	GetCredentialWithAppRoleToken(ctx context.Context, in *GetCredentialWithAppRoleTokenRequest, opts ...grpc.CallOption) (*GetCredentialWithAppRoleTokenResponse, error)
 }
 
 type vaultCredClient struct {
@@ -73,6 +77,24 @@ func (c *vaultCredClient) DeleteCred(ctx context.Context, in *DeleteCredRequest,
 	return out, nil
 }
 
+func (c *vaultCredClient) GetAppRoleToken(ctx context.Context, in *GetAppRoleTokenRequest, opts ...grpc.CallOption) (*GetAppRoleTokenResponse, error) {
+	out := new(GetAppRoleTokenResponse)
+	err := c.cc.Invoke(ctx, VaultCred_GetAppRoleToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *vaultCredClient) GetCredentialWithAppRoleToken(ctx context.Context, in *GetCredentialWithAppRoleTokenRequest, opts ...grpc.CallOption) (*GetCredentialWithAppRoleTokenResponse, error) {
+	out := new(GetCredentialWithAppRoleTokenResponse)
+	err := c.cc.Invoke(ctx, VaultCred_GetCredentialWithAppRoleToken_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VaultCredServer is the server API for VaultCred service.
 // All implementations must embed UnimplementedVaultCredServer
 // for forward compatibility
@@ -85,6 +107,8 @@ type VaultCredServer interface {
 	GetCred(context.Context, *GetCredRequest) (*GetCredResponse, error)
 	PutCred(context.Context, *PutCredRequest) (*PutCredResponse, error)
 	DeleteCred(context.Context, *DeleteCredRequest) (*DeleteCredResponse, error)
+	GetAppRoleToken(context.Context, *GetAppRoleTokenRequest) (*GetAppRoleTokenResponse, error)
+	GetCredentialWithAppRoleToken(context.Context, *GetCredentialWithAppRoleTokenRequest) (*GetCredentialWithAppRoleTokenResponse, error)
 	mustEmbedUnimplementedVaultCredServer()
 }
 
@@ -100,6 +124,12 @@ func (UnimplementedVaultCredServer) PutCred(context.Context, *PutCredRequest) (*
 }
 func (UnimplementedVaultCredServer) DeleteCred(context.Context, *DeleteCredRequest) (*DeleteCredResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCred not implemented")
+}
+func (UnimplementedVaultCredServer) GetAppRoleToken(context.Context, *GetAppRoleTokenRequest) (*GetAppRoleTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAppRoleToken not implemented")
+}
+func (UnimplementedVaultCredServer) GetCredentialWithAppRoleToken(context.Context, *GetCredentialWithAppRoleTokenRequest) (*GetCredentialWithAppRoleTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCredentialWithAppRoleToken not implemented")
 }
 func (UnimplementedVaultCredServer) mustEmbedUnimplementedVaultCredServer() {}
 
@@ -168,6 +198,42 @@ func _VaultCred_DeleteCred_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VaultCred_GetAppRoleToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAppRoleTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VaultCredServer).GetAppRoleToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VaultCred_GetAppRoleToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VaultCredServer).GetAppRoleToken(ctx, req.(*GetAppRoleTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VaultCred_GetCredentialWithAppRoleToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCredentialWithAppRoleTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VaultCredServer).GetCredentialWithAppRoleToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VaultCred_GetCredentialWithAppRoleToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VaultCredServer).GetCredentialWithAppRoleToken(ctx, req.(*GetCredentialWithAppRoleTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VaultCred_ServiceDesc is the grpc.ServiceDesc for VaultCred service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -186,6 +252,14 @@ var VaultCred_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCred",
 			Handler:    _VaultCred_DeleteCred_Handler,
+		},
+		{
+			MethodName: "GetAppRoleToken",
+			Handler:    _VaultCred_GetAppRoleToken_Handler,
+		},
+		{
+			MethodName: "GetCredentialWithAppRoleToken",
+			Handler:    _VaultCred_GetCredentialWithAppRoleToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
