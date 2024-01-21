@@ -133,3 +133,35 @@ func (v *VaultClient) AuthenticateWithAppRole(roleName string) (string, error) {
 
 	return secret.Auth.ClientToken, nil
 }
+
+func (v *VaultClient) ClusterEnableK8sAuth(clusterName, host, caCert, jwtToken string) error {
+	options := api.MountInput{
+		Type:        "kubernetes",
+		Description: "Kubernetes authentication",
+	}
+
+	authPath := "k8s-" + clusterName
+	err := v.c.Sys().EnableAuthWithOptions(authPath, &options)
+	if err != nil {
+		if !strings.Contains(err.Error(), "path is already in use") {
+			return errors.WithMessage(err, "failed to enable auth kubernetes")
+		}
+	}
+
+	configData := map[string]interface{}{
+		"kubernetes_host":            host,
+		"kubernetes_ca_cert":         caCert,
+		"token_reviewer_jwt":         jwtToken,
+		"kubernetes_skip_tls_verify": "true",
+		"issuer":                     "https://kubernetes.default.svc.cluster.local",
+	}
+
+	configPath := fmt.Sprintf("/auth/%s/config/", authPath)
+	_, err = v.c.Logical().Write(configPath, configData)
+	if err != nil {
+		return errors.WithMessage(err, "failed to write to k8s auth config")
+	}
+
+	v.log.Infof("cluster %s auth kubernetes enabled", clusterName)
+	return nil
+}

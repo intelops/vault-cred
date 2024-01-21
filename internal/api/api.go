@@ -11,10 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	vaultPolicyReadPath = `path "secret/data/%s" {capabilities = ["read"]}`
-)
-
 type VaultCredServ struct {
 	vaultcredpb.UnimplementedVaultCredServer
 	conf config.VaultEnv
