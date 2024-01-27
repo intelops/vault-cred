@@ -52,6 +52,26 @@ func (v *VaultClient) CreateOrUpdateRole(roleName string, serviceAccounts, names
 	return nil
 }
 
+func (v *VaultClient) CreateOrUpdateClusterRole(clusterName, roleName string, serviceAccounts, namespaces, policies []string) error {
+	roleData := make(map[string]interface{})
+
+	sa := strings.Join(serviceAccounts, ",")
+	ns := strings.Join(namespaces, ",")
+	roleData["bound_service_account_names"] = sa
+	roleData["bound_service_account_namespaces"] = ns
+	roleData["policies"] = policies
+	roleData["max_ttl"] = 1800000
+
+	path := fmt.Sprintf("/auth/k8s-%s/role/%s", clusterName, roleName)
+	_, err := v.c.Logical().Write(path, roleData)
+	if err != nil {
+		return err
+	}
+
+	v.log.Infof("Updated role %s", roleName)
+	return nil
+}
+
 func (v *VaultClient) CreateOrUpdateAppRole(roleName string, policies []string) error {
 	roleData := make(map[string]interface{})
 
