@@ -51,6 +51,8 @@ func (v *VaultCredServ) CreateK8SAuthRole(ctx context.Context, request *vaultcre
 		}
 		policyData = policyData + "\n" + credPathPolicy
 	}
+	clusterAuthLoginPath := fmt.Sprintf(vaultPolicyClusterAuthPath, request.ClusterName)
+	policyData = policyData + "\n" + clusterAuthLoginPath
 
 	policyName := "policy-" + request.ClusterName + "-" + request.RoleName
 	err = vc.CreateOrUpdatePolicy(policyName, policyData)
