@@ -21,7 +21,7 @@ type VaultEnv struct {
 	CACert                     string        `envconfig:"VAULT_CACERT" required:"false"`
 	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
 	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
-	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
+	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"true"`
 	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-server"`
 	VaultSecretNameSpace       string        `envconfig:"POD_NAMESPACE" required:"true"`
 	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"root-token"`
