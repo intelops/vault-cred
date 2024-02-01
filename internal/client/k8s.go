@@ -54,34 +54,9 @@ func (k *K8SClient) GetClusterConfig() (*rest.Config, error) {
 	return rest.InClusterConfig()
 }
 
-func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namespace string, data map[string]string) error {
-	secData := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespace,
-		},
-		StringData: data,
-	}
 
-	_, err := k.client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err != nil && k8serrors.IsNotFound(err) {
-		createdSecret, err := k.client.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
-		if err != nil {
-			return errors.WithMessage(err, "error in creating vault secret")
-		}
-		k.log.Infof("Secret %s created in namespace %s", createdSecret.Name, createdSecret.Namespace)
-		return nil
-	}
 
-	updatedsecret, err := k.client.CoreV1().Secrets(namespace).Update(context.TODO(), secData, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.WithMessage(err, "error in creating vault secret")
-	}
-	k.log.Infof("Secret %s updated in namespace %s", updatedsecret.Name, updatedsecret.Namespace)
-	return nil
-}
-
-func (k *K8SClient) CreateOrUpdateSecretVault(ctx context.Context, namespace, secretName string, secretType v1.SecretType,
+func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, namespace, secretName string, secretType v1.SecretType,
 	data map[string][]byte, annotation map[string]string) error {
 	_, err := k.client.CoreV1().Secrets(namespace).Create(ctx,
 		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName,

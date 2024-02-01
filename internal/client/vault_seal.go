@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
 )
 
 func (vc *VaultClient) IsVaultSealed() (bool, error) {
@@ -59,18 +60,19 @@ func (vc *VaultClient) initializeVaultSecret() error {
 		return errors.WithMessage(err, "error while generating unseal keys")
 	}
 
-	stringData := make(map[string]string)
+	stringData := make(map[string][]byte)
 	for i, value := range unsealKeys {
 		key := fmt.Sprintf("%s%d", vc.conf.VaultSecretUnSealKeyPrefix, i+1)
-		stringData[key] = value
+		stringData[key] = []byte(value)
 	}
 
-	stringData[vc.conf.VaultSecretTokenKeyName] = rootToken
+	stringData[vc.conf.VaultSecretTokenKeyName] = []byte(rootToken)
 	k8s, err := NewK8SClient(vc.log)
 	if err != nil {
 		return errors.WithMessage(err, "error initializing k8s client")
 	}
-	err = k8s.CreateOrUpdateSecret(context.Background(), vc.conf.VaultSecretName, vc.conf.VaultSecretNameSpace, stringData)
+	err = k8s.CreateOrUpdateSecret(context.Background(), vc.conf.VaultSecretNameSpace, vc.conf.VaultSecretName, v1.SecretTypeOpaque, stringData, nil)
+
 	if err != nil {
 		return errors.WithMessage(err, "error creating vault secret")
 	}

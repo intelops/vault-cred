@@ -117,7 +117,7 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 
 	cred := map[string][]byte{"token": []byte(token)}
 	vaultTokenSecretName := "vault-token-" + request.SecretName
-	err = k8sclient.CreateOrUpdateSecretVault(ctx, request.Namespace, vaultTokenSecretName, v1.SecretTypeOpaque, cred, nil)
+	err = k8sclient.CreateOrUpdateSecret(ctx, request.Namespace, vaultTokenSecretName, v1.SecretTypeOpaque, cred, nil)
 	if err != nil {
 		v.log.Errorf("failed to create cluter vault token secret, %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
@@ -143,12 +143,7 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_OK}, nil
 }
 
-// type config struct {
-// 	VaultCredAddress string `envconfig:"VAULT_CRED_ADDR" default:"vault-cred:8080"`
-// }
-
 func (v *VaultCredServ) GetAppRoleToken(appRoleName string, credentialPaths []string) (string, error) {
-
 
 	vc, err := grpc.Dial(v.conf.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

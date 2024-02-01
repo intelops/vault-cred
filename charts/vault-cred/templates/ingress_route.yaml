@@ -11,7 +11,7 @@ spec:
   - kind: Rule
     match: Host(`{{ .Values.ingressroute.host }}`)
     services:
-    - name: kad-agent
+    - name: vault-cred
       port: {{ .Values.service.port }}
       scheme: h2c
 {{- if .Values.ingressroute.mtls.enabled }}

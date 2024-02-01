@@ -39,7 +39,14 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 8080
+ingressroute:
+  enabled: true
+  mtls:
+    enabled: true
+  host: "vaultcred"
 
+cert:
+  secretName: "kad-agent-cert"
 env:
   logLevel: info
 
