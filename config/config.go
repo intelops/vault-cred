@@ -12,6 +12,7 @@ type Configuration struct {
 	VaultSealWatchInterval   string `envconfig:"VAULT_SEAL_WATCH_INTERVAL"`
 	VaultPolicyWatchInterval string `envconfig:"VAULT_POLICY_WATCH_INTERVAL"`
 	VaultCredSyncInterval    string `envconfig:"VAULT_CRED_SYNC_INTERVAL"`
+
 }
 
 type VaultEnv struct {
@@ -41,3 +42,5 @@ func GetVaultEnv() (VaultEnv, error) {
 	err := envconfig.Process("", &cfg)
 	return cfg, err
 }
+
+

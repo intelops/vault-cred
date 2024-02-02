@@ -31,8 +31,22 @@ func Start() {
 	if err != nil {
 		log.Fatal("Fetching application configuration failed", err)
 	}
+	config, err := api.FetchConfig()
+	if err != nil {
+		log.Fatal("Fetching Certificate configuration failed", err)
+	}
+
+	if config.TlsEnabled {
+		_, err := api.NewVaultClient(log, &config)
+		if err != nil {
+			log.Fatal("Error while connecting to Vault Client %v", err)
+		}
+
+	}
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+
+
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal("Failed to listen", err)
