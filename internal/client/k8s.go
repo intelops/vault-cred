@@ -42,19 +42,31 @@ func NewK8SClient(log logging.Logger) (*K8SClient, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	return &K8SClient{client: clientset, log: log}, nil
+
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("initialize kubernetes client failed: %v", err)
+	}
+
+	dcClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize dynamic client failed: %v", err)
+	}
+	return &K8SClient{
+		client:                 clientset,
+		log:                    log,
+		DynamicClientInterface: dcClient,
+		DynamicClient:          NewDynamicClientSet(dcClient),
+	}, nil
 }
 
 func (k *K8SClient) GetClusterConfig() (*rest.Config, error) {
 	return rest.InClusterConfig()
 }
-
-
 
 func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, namespace, secretName string, secretType v1.SecretType,
 	data map[string][]byte, annotation map[string]string) error {
