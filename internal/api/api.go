@@ -146,6 +146,8 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	}
 
 	vaultAddressStr := fmt.Sprintf(v.conf.Address, request.DomainName)
+	res := fmt.Sprintf(v.conf.Address, request.DomainName)
+	v.log.Debug("vault address", res)
 	secretStoreName := "ext-store-" + request.SecretName
 	err = k8sclient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
 	if err != nil {
