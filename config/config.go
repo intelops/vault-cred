@@ -16,6 +16,7 @@ type Configuration struct {
 }
 
 type VaultEnv struct {
+	VaultCredAddress string `envconfig:"VAULT_CRED_ADDR" default:"vault-cred:8080"`
 	HAEnabled                  bool          `envconfig:"HA_ENABLED" default:"true"`
 	Address                    string        `envconfig:"VAULT_ADDR" required:"true"`
 	NodeAddresses              []string      `envconfig:"VAULT_NODE_ADDRESSES" required:"true"`

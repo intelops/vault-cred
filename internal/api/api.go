@@ -9,7 +9,8 @@ import (
 	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
-	"github.com/kelseyhightower/envconfig"
+
+	//	"github.com/kelseyhightower/envconfig"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
@@ -27,21 +28,22 @@ type VaultCredServ struct {
 	conf config.VaultEnv
 	log  logging.Logger
 }
-type Config struct {
-	Address    string
-	CaCert     string
-	Cert       string
-	Key        string
-	ServicName string
 
-	TlsEnabled bool `envconfig:"TLS_ENABLED" default:"true"`
-}
+// type Config struct {
+// 	Address    string
+// 	CaCert     string
+// 	Cert       string
+// 	Key        string
+// 	ServicName string
 
-func FetchConfig() (Config, error) {
-	cfg := Config{}
-	err := envconfig.Process("", &cfg)
-	return cfg, err
-}
+// 	TlsEnabled bool `envconfig:"TLS_ENABLED" default:"true"`
+// }
+
+// func FetchConfig() (Config, error) {
+// 	cfg := Config{}
+// 	err := envconfig.Process("", &cfg)
+// 	return cfg, err
+// }
 
 func NewVaultCredServ(log logging.Logger) (*VaultCredServ, error) {
 
@@ -164,8 +166,8 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 }
 
 func (v *VaultCredServ) GetAppRoleToken(appRoleName string, credentialPaths []string) (string, error) {
-	addr := "vault:8200"
-	vc, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	vc, err := grpc.Dial(v.conf.VaultCredAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return "", fmt.Errorf("failed to connect vauld-cred server, %v", err)
 	}
