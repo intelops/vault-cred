@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -109,7 +110,17 @@ func (dc *DynamicClientSet) CreateResource(ctx context.Context, data []byte) (st
 	if err != nil {
 		return "", "", err
 	}
+	// Check if Resource Exists
+	if dc.client == nil {
+		return "", "", errors.New("client is not initialized")
+	}
+	if resourceID == (schema.GroupVersionResource{}) {
+		return "", "", errors.New("resourceID is empty")
+	}
 
+	if namespaceName == "" {
+		return "", "", errors.New(" namespaceName is empty")
+	}
 	_, err = dc.client.Resource(resourceID).Namespace(namespaceName).Get(ctx, resourceName, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
