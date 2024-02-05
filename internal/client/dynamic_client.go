@@ -8,12 +8,16 @@ import (
 	"os"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
+
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	kubeyaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+
+	//kubeyaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/yaml"
 )
@@ -71,23 +75,44 @@ func (dc *DynamicClientSet) GetNameNamespace(jsonByte []byte) (string, string, e
 
 func (dc *DynamicClientSet) getGVK(data []byte) (obj *unstructured.Unstructured, resourceID schema.GroupVersionResource, err error) {
 	fmt.Println("Getting GroupVersionResource (GVK) from YAML data...")
-	dec := kubeyaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+
+	dec := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
 
 	obj = &unstructured.Unstructured{}
 
-	_, gvk, err := dec.Decode([]byte(string(data)), nil, obj)
+	_, gvk, err := dec.Decode([]byte(data), nil, obj)
 	if err != nil {
-		return
+		return nil, schema.GroupVersionResource{}, err
 	}
 
 	resourceID = schema.GroupVersionResource{
 		Group:    gvk.Group,
 		Version:  gvk.Version,
-		Resource: strings.ToLower(gvk.Kind + string('s')),
+		Resource: strings.ToLower(gvk.Kind + "s"), // corrected the concatenation
 	}
 
-	return
+	return obj, resourceID, nil
 }
+
+// func (dc *DynamicClientSet) getGVK(data []byte) (obj *unstructured.Unstructured, resourceID schema.GroupVersionResource, err error) {
+// 	fmt.Println("Getting GroupVersionResource (GVK) from YAML data...")
+// 	dec := kubeyaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
+
+// 	obj = &unstructured.Unstructured{}
+
+// 	_, gvk, err := dec.Decode([]byte(string(data)), nil, obj)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	resourceID = schema.GroupVersionResource{
+// 		Group:    gvk.Group,
+// 		Version:  gvk.Version,
+// 		Resource: strings.ToLower(gvk.Kind + string('s')),
+// 	}
+
+// 	return
+// }
 
 func (dc *DynamicClientSet) CreateResourceFromFile(ctx context.Context, filename string) (string, string, error) {
 	data, err := os.ReadFile(filename)
@@ -99,7 +124,7 @@ func (dc *DynamicClientSet) CreateResourceFromFile(ctx context.Context, filename
 }
 
 func (dc *DynamicClientSet) CreateResource(ctx context.Context, data []byte) (string, string, error) {
-	if data != nil {
+	if data == nil {
 		log.Println("Data is nil")
 	}
 	jsonData, err := ConvertYamlToJson(data)
@@ -107,7 +132,7 @@ func (dc *DynamicClientSet) CreateResource(ctx context.Context, data []byte) (st
 		return "", "", err
 	}
 
-	if jsonData != nil {
+	if jsonData == nil {
 		log.Println("json data is nil")
 	}
 	obj, resourceID, err := dc.getGVK(jsonData)
