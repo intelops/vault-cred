@@ -42,8 +42,8 @@ service:
 ingressroute:
   enabled: true
   mtls:
-    enabled: true
-  host: "vaultcred"
+    enabled: false
+  host: "vaultcred.azureagent.optimizor.app"
 
 cert:
   secretName: "kad-agent-cert"

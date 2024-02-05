@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	kadAppRolePrefix = "kad-approle-"
+	kadAppRolePrefix = "vault-approle-"
 )
 
 type VaultCredServ struct {
@@ -164,8 +164,8 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 }
 
 func (v *VaultCredServ) GetAppRoleToken(appRoleName string, credentialPaths []string) (string, error) {
-
-	vc, err := grpc.Dial(v.conf.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	addr := "vault:8200"
+	vc, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return "", fmt.Errorf("failed to connect vauld-cred server, %v", err)
 	}
