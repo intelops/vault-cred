@@ -25,10 +25,12 @@ serviceAccount:
 
 podAnnotations: {}
 
-podSecurityContext: {}
+podSecurityContext:
+  {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -43,7 +45,7 @@ ingressroute:
   enabled: true
   mtls:
     enabled: false
-  host: "vaultcred.azureagent.optimizor.app"
+  host: "vaultcred"
 
 cert:
   secretName: "kad-agent-cert"
@@ -51,8 +53,8 @@ env:
   logLevel: info
 
 vault:
-  haEnabled: false
-  vaultAddress: http://vault:8200
+  haEnabled: true
+  vaultAddress: http://vault-hash:8200
   vaultLeaderAddress: vault-hash-0.vault-hash-internal:8200
   vaultNodeAddresses: "http://vault-hash-0:8200,http://vault-hash-1:8200,http://vault-hash-2:8200"
   secretName: vault-server
@@ -143,7 +145,8 @@ vaultRoles:
 ingress:
   enabled: false
   className: ""
-  annotations: {}
+  annotations:
+    {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
@@ -156,7 +159,8 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
-resources: {}
+resources:
+  {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
   # resources, such as Minikube. If you do want to specify resources, uncomment the following

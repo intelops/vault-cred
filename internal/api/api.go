@@ -10,18 +10,7 @@ import (
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
 
-	//	"github.com/kelseyhightower/envconfig"
-
 	"github.com/pkg/errors"
-	"google.golang.org/grpc"
-
-	"google.golang.org/grpc/credentials/insecure"
-	v1 "k8s.io/api/core/v1"
-)
-
-var (
-	kadAppRolePrefix = "kad-approle-"
-	vaultAddress     = "http://vault.%s"
 )
 
 type VaultCredServ struct {
@@ -29,22 +18,6 @@ type VaultCredServ struct {
 	conf config.VaultEnv
 	log  logging.Logger
 }
-
-// type Config struct {
-// 	Address    string
-// 	CaCert     string
-// 	Cert       string
-// 	Key        string
-// 	ServicName string
-
-// 	TlsEnabled bool `envconfig:"TLS_ENABLED" default:"true"`
-// }
-
-// func FetchConfig() (Config, error) {
-// 	cfg := Config{}
-// 	err := envconfig.Process("", &cfg)
-// 	return cfg, err
-// }
 
 func NewVaultCredServ(log logging.Logger) (*VaultCredServ, error) {
 
@@ -113,73 +86,4 @@ func (v *VaultCredServ) DeleteCredential(ctx context.Context, request *vaultcred
 
 	v.log.Infof("delete credential request processed for %s", secretPath)
 	return &vaultcredpb.DeleteCredentialResponse{}, nil
-}
-
-func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vaultcredpb.ConfigureVaultSecretRequest) (*vaultcredpb.ConfigureVaultSecretResponse, error) {
-	v.log.Infof("Configure Vault Secret Request recieved for secret ", request.SecretName)
-
-	secretPathsData := map[string]string{}
-	secretPaths := []string{}
-	for _, secretPathData := range request.SecretPathData {
-		secretPathsData[secretPathData.SecretKey] = secretPathData.SecretPath
-		secretPaths = append(secretPaths, secretPathData.SecretPath)
-	}
-
-	appRoleName := kadAppRolePrefix + request.SecretName
-	token, err := v.GetAppRoleToken(appRoleName, secretPaths)
-	if err != nil {
-		v.log.Errorf("failed to create app role token for %s, %v", appRoleName, err)
-		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
-	}
-
-	k8sclient, err := client.NewK8SClient(v.log)
-	if err != nil {
-		v.log.Errorf("failed to initalize k8s client, %v", err)
-		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
-	}
-
-	cred := map[string][]byte{"token": []byte(token)}
-	vaultTokenSecretName := "vault-token-" + request.SecretName
-	err = k8sclient.CreateOrUpdateSecret(ctx, request.Namespace, vaultTokenSecretName, v1.SecretTypeOpaque, cred, nil)
-	if err != nil {
-		v.log.Errorf("failed to create cluter vault token secret, %v", err)
-		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
-	}
-
-	vaultAddressStr := fmt.Sprintf(vaultAddress, request.DomainName)
-	secretStoreName := "ext-store-" + request.SecretName
-	err = k8sclient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
-	if err != nil {
-		v.log.Errorf("failed to create cluter vault token secret, %v", err)
-		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
-	}
-	v.log.Infof("created secret store %s/%s", request.Namespace, secretStoreName)
-
-	externalSecretName := "ext-secret-" + request.SecretName
-	err = k8sclient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName,
-		request.SecretName, "", secretPathsData)
-	if err != nil {
-		v.log.Errorf("failed to create vault external secret, %v", err)
-		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
-	}
-	v.log.Infof("created external secret %s/%s", request.Namespace, externalSecretName)
-	return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_OK}, nil
-}
-
-func (v *VaultCredServ) GetAppRoleToken(appRoleName string, credentialPaths []string) (string, error) {
-
-	vc, err := grpc.Dial(v.conf.VaultCredAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return "", fmt.Errorf("failed to connect vauld-cred server, %v", err)
-	}
-	vcClient := vaultcredpb.NewVaultCredClient(vc)
-
-	tokenData, err := vcClient.CreateAppRoleToken(context.Background(), &vaultcredpb.CreateAppRoleTokenRequest{
-		AppRoleName: appRoleName,
-		SecretPaths: credentialPaths,
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to generate app role token for %s, %v", appRoleName, err)
-	}
-	return tokenData.Token, nil
 }

@@ -8,44 +8,50 @@ import (
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
 )
 
-func (v *VaultCredServ) CreateAppRoleToken(ctx context.Context, request *vaultcredpb.CreateAppRoleTokenRequest) (*vaultcredpb.CreateAppRoleTokenResponse, error) {
-	v.log.Infof("app role token request for vault path %v with role %s", request.SecretPaths, request.AppRoleName)
+func (v *VaultCredServ) CreateAppRoleToken(ctx context.Context,
+	request *vaultcredpb.CreateAppRoleTokenRequest) (*vaultcredpb.CreateAppRoleTokenResponse, error) {
+	token, err := v.createAppRoleToken(ctx, request.AppRoleName, request.SecretPaths)
+	return &vaultcredpb.CreateAppRoleTokenResponse{Token: token}, err
+}
+
+func (v *VaultCredServ) createAppRoleToken(ctx context.Context, appRoleName string, secretPaths []string) (string, error) {
+	v.log.Infof("app role token request for vault path %v with role %s", secretPaths, appRoleName)
 	vc, err := client.NewVaultClientForTokenFromEnv(v.log, v.conf)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	err = vc.EnableAppRoleAuth()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	var policyData string
-	for _, credPath := range request.SecretPaths {
+	for _, credPath := range secretPaths {
 		credPathPolicy := fmt.Sprintf(vaultPolicyReadPath, credPath)
 		policyData = policyData + "\n" + credPathPolicy
 	}
 
-	policyName := request.AppRoleName + "-policy"
+	policyName := appRoleName + "-policy"
 	err = vc.CreateOrUpdatePolicy(policyName, policyData)
 	if err != nil {
-		v.log.Errorf("error while creating Vault policy for app role %s", request.AppRoleName, err)
-		return nil, err
+		v.log.Errorf("error while creating Vault policy for app role %s", appRoleName, err)
+		return "", err
 	}
 
-	err = vc.CreateOrUpdateAppRole(request.AppRoleName, []string{policyName})
+	err = vc.CreateOrUpdateAppRole(appRoleName, []string{policyName})
 	if err != nil {
-		v.log.Errorf("error while creating Vault policy for app role %s", request.AppRoleName, err)
-		return nil, err
+		v.log.Errorf("error while creating Vault policy for app role %s", appRoleName, err)
+		return "", err
 	}
 
-	token, err := vc.AuthenticateWithAppRole(request.AppRoleName)
+	token, err := vc.AuthenticateWithAppRole(appRoleName)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	v.log.Infof("app role token generated for path %v with role %s", request.SecretPaths, request.AppRoleName)
-	return &vaultcredpb.CreateAppRoleTokenResponse{Token: token}, nil
+	v.log.Infof("app role token generated for path %v with role %s", secretPaths, appRoleName)
+	return token, nil
 }
 
 func (v *VaultCredServ) DeleteAppRole(ctx context.Context, request *vaultcredpb.DeleteAppRoleRequest) (*vaultcredpb.DeleteAppRoleResponse, error) {
