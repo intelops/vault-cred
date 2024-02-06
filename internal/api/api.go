@@ -20,7 +20,8 @@ import (
 )
 
 var (
-	kadAppRolePrefix = "vault-approle-"
+	kadAppRolePrefix = "kad-approle-"
+	vaultAddress     = "http://vault.%s"
 )
 
 type VaultCredServ struct {
@@ -145,9 +146,7 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
-	vaultAddressStr := fmt.Sprintf(v.conf.Address, request.DomainName)
-	res := fmt.Sprintf(v.conf.Address, request.DomainName)
-	v.log.Debug("vault address", res)
+	vaultAddressStr := fmt.Sprintf(vaultAddress, request.DomainName)
 	secretStoreName := "ext-store-" + request.SecretName
 	err = k8sclient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
 	if err != nil {

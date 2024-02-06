@@ -60,3 +60,13 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/* Define vaultcred.clusterRoleName */}}
+{{- define "vaultcred.clusterRoleName" -}}
+vaultcredclusterrole
+{{- end -}}
+
+{{/* Define vaultcred.clusterRoleBindingName */}}
+{{- define "vaultcred.clusterRoleBindingName" -}}
+vaultcredclusterrolebinding
+{{- end -}}

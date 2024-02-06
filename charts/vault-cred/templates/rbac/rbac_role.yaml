@@ -90,3 +90,6 @@ rules:
   - events
   verbs:
   - create
+- apiGroups: ["external-secrets.io"]
+  resources: ["externalsecrets"]
+  verbs: ["create", "get", "update", "delete"]

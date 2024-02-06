@@ -4,12 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+
 	"os"
 	"strings"
-
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/pkg/errors"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -17,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	//kubeyaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	kubeyaml "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/yaml"
 )
@@ -31,7 +28,7 @@ func NewDynamicClientSet(dynamicClient dynamic.Interface) *DynamicClientSet {
 }
 
 func ConvertYamlToJson(data []byte) ([]byte, error) {
-	fmt.Println("Converting YAML to JSON...")
+
 	jsonData, err := yaml.YAMLToJSON(data)
 	if err != nil {
 		return nil, err
@@ -74,9 +71,8 @@ func (dc *DynamicClientSet) GetNameNamespace(jsonByte []byte) (string, string, e
 }
 
 func (dc *DynamicClientSet) getGVK(data []byte) (obj *unstructured.Unstructured, resourceID schema.GroupVersionResource, err error) {
-	fmt.Println("Getting GroupVersionResource (GVK) from YAML data...")
 
-	dec := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer()
+	dec := kubeyaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
 	obj = &unstructured.Unstructured{}
 
@@ -94,26 +90,6 @@ func (dc *DynamicClientSet) getGVK(data []byte) (obj *unstructured.Unstructured,
 	return obj, resourceID, nil
 }
 
-// func (dc *DynamicClientSet) getGVK(data []byte) (obj *unstructured.Unstructured, resourceID schema.GroupVersionResource, err error) {
-// 	fmt.Println("Getting GroupVersionResource (GVK) from YAML data...")
-// 	dec := kubeyaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-
-// 	obj = &unstructured.Unstructured{}
-
-// 	_, gvk, err := dec.Decode([]byte(string(data)), nil, obj)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	resourceID = schema.GroupVersionResource{
-// 		Group:    gvk.Group,
-// 		Version:  gvk.Version,
-// 		Resource: strings.ToLower(gvk.Kind + string('s')),
-// 	}
-
-// 	return
-// }
-
 func (dc *DynamicClientSet) CreateResourceFromFile(ctx context.Context, filename string) (string, string, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -124,30 +100,22 @@ func (dc *DynamicClientSet) CreateResourceFromFile(ctx context.Context, filename
 }
 
 func (dc *DynamicClientSet) CreateResource(ctx context.Context, data []byte) (string, string, error) {
-	if data == nil {
-		log.Println("Data is nil")
-	}
+
 	jsonData, err := ConvertYamlToJson(data)
 	if err != nil {
 		return "", "", err
 	}
 
-	if jsonData == nil {
-		log.Println("json data is nil")
-	}
 	obj, resourceID, err := dc.getGVK(jsonData)
 	if err != nil {
 		return "", "", err
 	}
 
-	if (obj == &unstructured.Unstructured{}) {
-		log.Println("object is nil")
-	}
 	namespaceName, resourceName, err := dc.GetNameNamespace(jsonData)
 	if err != nil {
 		return "", "", err
 	}
-	// Check if Resource Exists
+
 	if dc.client == nil {
 		return "", "", errors.New("client is not initialized")
 	}
