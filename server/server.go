@@ -33,6 +33,7 @@ func Start() {
 	}
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal("Failed to listen", err)

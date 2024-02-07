@@ -2,21 +2,27 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
+
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type K8SClient struct {
-	client *kubernetes.Clientset
-	log    logging.Logger
+	client                 *kubernetes.Clientset
+	DynamicClientInterface dynamic.Interface
+	DynamicClient          *DynamicClientSet
+	log                    logging.Logger
 }
 
 type ConfigMapData struct {
@@ -36,45 +42,52 @@ func NewK8SClient(log logging.Logger) (*K8SClient, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	return &K8SClient{client: clientset, log: log}, nil
+
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("initialize kubernetes client failed: %v", err)
+	}
+
+	dcClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize dynamic client failed: %v", err)
+	}
+	return &K8SClient{
+		client:                 clientset,
+		log:                    log,
+		DynamicClientInterface: dcClient,
+		DynamicClient:          NewDynamicClientSet(dcClient),
+	}, nil
 }
 
 func (k *K8SClient) GetClusterConfig() (*rest.Config, error) {
 	return rest.InClusterConfig()
 }
 
-func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, secretName, namespace string, data map[string]string) error {
-	secData := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespace,
-		},
-		StringData: data,
-	}
-
-	_, err := k.client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err != nil && k8serrors.IsNotFound(err) {
-		createdSecret, err := k.client.CoreV1().Secrets(namespace).Create(context.TODO(), secData, metav1.CreateOptions{})
+func (k *K8SClient) CreateOrUpdateSecret(ctx context.Context, namespace, secretName string, secretType v1.SecretType,
+	data map[string][]byte, annotation map[string]string) error {
+	_, err := k.client.CoreV1().Secrets(namespace).Create(ctx,
+		&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName,
+			Annotations: annotation},
+			Type: secretType, Data: data},
+		metav1.CreateOptions{})
+	if k8serrors.IsAlreadyExists(err) {
+		_, err := k.client.CoreV1().Secrets(namespace).Update(ctx,
+			&v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Annotations: annotation},
+				Type: secretType, Data: data},
+			metav1.UpdateOptions{})
 		if err != nil {
-			return errors.WithMessage(err, "error in creating vault secret")
+			return fmt.Errorf("failed to update k8s secret, %v", err)
 		}
-		k.log.Infof("Secret %s created in namespace %s", createdSecret.Name, createdSecret.Namespace)
-		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to create k8s secret, %v", err)
 	}
-
-	updatedsecret, err := k.client.CoreV1().Secrets(namespace).Update(context.TODO(), secData, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.WithMessage(err, "error in creating vault secret")
-	}
-	k.log.Infof("Secret %s updated in namespace %s", updatedsecret.Name, updatedsecret.Namespace)
 	return nil
 }
-
 func (k *K8SClient) GetSecret(ctx context.Context, secretName, namespace string) (*SecretData, error) {
 	secData, err := k.client.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {

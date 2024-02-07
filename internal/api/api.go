@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+
 	"fmt"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/intelops/vault-cred/config"
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
+
 	"github.com/pkg/errors"
 )
 
@@ -18,6 +20,7 @@ type VaultCredServ struct {
 }
 
 func NewVaultCredServ(log logging.Logger) (*VaultCredServ, error) {
+
 	conf, err := config.GetVaultEnv()
 	if err != nil {
 		return nil, err

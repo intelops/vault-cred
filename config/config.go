@@ -12,16 +12,18 @@ type Configuration struct {
 	VaultSealWatchInterval   string `envconfig:"VAULT_SEAL_WATCH_INTERVAL"`
 	VaultPolicyWatchInterval string `envconfig:"VAULT_POLICY_WATCH_INTERVAL"`
 	VaultCredSyncInterval    string `envconfig:"VAULT_CRED_SYNC_INTERVAL"`
+
 }
 
 type VaultEnv struct {
+	VaultCredAddress string `envconfig:"VAULT_CRED_ADDR" default:"vault-cred:8080"`
 	HAEnabled                  bool          `envconfig:"HA_ENABLED" default:"true"`
 	Address                    string        `envconfig:"VAULT_ADDR" required:"true"`
 	NodeAddresses              []string      `envconfig:"VAULT_NODE_ADDRESSES" required:"true"`
 	CACert                     string        `envconfig:"VAULT_CACERT" required:"false"`
 	ReadTimeout                time.Duration `envconfig:"VAULT_READ_TIMEOUT" default:"60s"`
 	MaxRetries                 int           `envconfig:"VAULT_MAX_RETRIES" default:"5"`
-	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"false"`
+	VaultTokenForRequests      bool          `envconfig:"VAULT_TOKEN_FOR_REQUESTS" default:"true"`
 	VaultSecretName            string        `envconfig:"VAULT_SECRET_NAME" default:"vault-server"`
 	VaultSecretNameSpace       string        `envconfig:"POD_NAMESPACE" required:"true"`
 	VaultSecretTokenKeyName    string        `envconfig:"VAULT_SECRET_TOKEN_KEY_NAME" default:"root-token"`
@@ -41,3 +43,5 @@ func GetVaultEnv() (VaultEnv, error) {
 	err := envconfig.Process("", &cfg)
 	return cfg, err
 }
+
+

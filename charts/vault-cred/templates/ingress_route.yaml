@@ -1,0 +1,23 @@
+{{- if .Values.ingressroute.enabled -}}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ include "vaultcred.fullname" . }}-agent
+spec:
+  entryPoints:
+  - web
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host(`{{ .Values.ingressroute.host }}`)
+    services:
+    - name: vault-cred
+      port: {{ .Values.service.port }}
+      scheme: h2c
+{{- if .Values.ingressroute.mtls.enabled }}
+  tls:
+    options:
+      name: {{ include "vaultcred.fullname" . }}-mtls-auth
+    secretName: {{ .Values.cert.secretName }}
+{{- end }}
+{{- end }}
