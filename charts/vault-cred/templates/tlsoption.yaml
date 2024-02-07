@@ -1,0 +1,14 @@
+{{- if and .Values.ingressroute.enabled .Values.ingressroute.mtls.enabled }}
+apiVersion: traefik.containo.us/v1alpha1
+kind: TLSOption
+metadata:
+  name: {{ include "vaultcred.fullname" . }}-mtls-auth
+spec:
+  clientAuth:
+    clientAuthType: RequireAndVerifyClientCert
+    secretNames:
+    - {{ .Values.cert.secretName }}
+  maxVersion: VersionTLS13
+  minVersion: VersionTLS12
+  sniStrict: true
+{{- end }}
