@@ -127,6 +127,26 @@ vaultPolicies:
         path "auth/kubernetes/login" {
           capabilities = ["create","read","update"]
         }
+  - name: vault-policy-plugin-cred-admin
+    data:
+      policyName: vault-policy-plugin-cred-admin
+      policyData: |
+        path "secret/data/plugin/*" {
+          capabilities = ["create","read","update","delete","list"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
+  - name: vault-policy-plugin-cred-read
+    data:
+      policyName: vault-policy-plugin-cred-read
+      policyData: |
+        path "secret/data/plugin/*" {
+          capabilities = ["read"]
+        }
+        path "auth/kubernetes/login" {
+          capabilities = ["create","read","update"]
+        }
 
 vaultRoles:
 #  - name: vault-role-read-all-creds
