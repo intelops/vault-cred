@@ -12,3 +12,6 @@ build:
 
 docker-build:
 	docker build -f Dockerfile -t ${APP_NAME}:${BUILD} .
+
+clean:
+	rm vault-cred

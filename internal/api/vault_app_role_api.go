@@ -55,7 +55,32 @@ func (v *VaultCredServ) createAppRoleToken(ctx context.Context, appRoleName stri
 }
 
 func (v *VaultCredServ) DeleteAppRole(ctx context.Context, request *vaultcredpb.DeleteAppRoleRequest) (*vaultcredpb.DeleteAppRoleResponse, error) {
-	return nil, nil
+	v.log.Infof("app role delete request for vault role %s", request.RoleName)
+	vc, err := client.NewVaultClientForTokenFromEnv(v.log, v.conf)
+	if err != nil {
+		return nil, err
+	}
+
+	err = vc.EnableAppRoleAuth()
+	if err != nil {
+		return nil, err
+	}
+
+	err = vc.DeleteRole(request.RoleName)
+	if err != nil {
+		return nil, err
+	}
+
+	policyName := request.RoleName + "-policy"
+	err = vc.DeletePolicy(policyName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vaultcredpb.DeleteAppRoleResponse{
+		Status:        vaultcredpb.StatusCode_OK,
+		StatusMessage: fmt.Sprintf("app role %s deleted", request.RoleName),
+	}, nil
 }
 
 func (v *VaultCredServ) GetCredentialWithAppRoleToken(ctx context.Context, request *vaultcredpb.GetCredentialWithAppRoleTokenRequest) (*vaultcredpb.GetCredentialWithAppRoleTokenResponse, error) {
