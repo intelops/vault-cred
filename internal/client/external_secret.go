@@ -173,6 +173,8 @@ func (k *K8SClient) CreateOrUpdateSecretStore(ctx context.Context, secretStoreNa
 func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSecretName, namespace,
 	secretStoreRefName, secretName, secretType string, vaultKeyPathdata, properties map[string]string) (err error) {
 	secretKeysData := []ExternalSecretData{}
+	log.Println("Vault Path data", vaultKeyPathdata)
+	log.Println("properties", properties)
 	for key, path := range vaultKeyPathdata {
 		property := properties[key]
 		if property == "" {

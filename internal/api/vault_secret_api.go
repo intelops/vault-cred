@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
@@ -75,7 +76,8 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		secretPaths = append(secretPaths, secretPathData.SecretPath)
 		properties[secretPathData.SecretKey] = secretPathData.Property
 	}
-
+	log.Println("Prop", properties)
+	log.Println("secretpath data in configuring vault secret", secretPathsData)
 	appRoleName := kadAppRolePrefix + request.SecretName
 	token, err := v.createAppRoleToken(context.Background(), appRoleName, secretPaths)
 	if err != nil {
