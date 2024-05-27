@@ -196,21 +196,24 @@ var (
 func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vaultcredpb.ConfigureVaultSecretRequest) (*vaultcredpb.ConfigureVaultSecretResponse, error) {
 	v.log.Infof("Configure Vault Secret Request received for secret %s", request.SecretName)
 
-	secretPathsData := map[string]string{}
-	propertiesData := map[string]string{}
+	secretPathsData := make(map[string][]string)
+	propertiesData := make(map[string][]string)
 	secretPaths := []string{}
 
+	log.Println("Request path data", request.SecretPathData)
+
 	for _, secretPathData := range request.SecretPathData {
-		secretPathsData[secretPathData.SecretKey] = secretPathData.SecretPath
+		secretPathsData[secretPathData.SecretKey] = append(secretPathsData[secretPathData.SecretKey], secretPathData.SecretPath)
 		secretPaths = append(secretPaths, secretPathData.SecretPath)
 		if secretPathData.Property != "" {
-			propertiesData[secretPathData.SecretKey] = secretPathData.Property
+			propertiesData[secretPathData.SecretKey] = append(propertiesData[secretPathData.SecretKey], secretPathData.Property)
 		} else {
-			propertiesData[secretPathData.SecretKey] = secretPathData.SecretKey // default to secretKey if property is not provided
+			propertiesData[secretPathData.SecretKey] = append(propertiesData[secretPathData.SecretKey], secretPathData.SecretKey) // default to secretKey if property is not provided
 		}
 	}
+
 	log.Println("Secret Paths data while configuring", secretPathsData)
-	log.Println("Properties  while configuring", propertiesData)
+	log.Println("Properties while configuring", propertiesData)
 
 	appRoleName := kadAppRolePrefix + request.SecretName
 	token, err := v.createAppRoleToken(context.Background(), appRoleName, secretPaths)
@@ -242,8 +245,7 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	v.log.Infof("created secret store %s/%s", request.Namespace, secretStoreName)
 
 	externalSecretName := "ext-secret-" + request.SecretName
-	err = k8sclient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName,
-		request.SecretName, "", secretPathsData, propertiesData)
+	err = k8sclient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName, request.SecretName, "", secretPathsData, propertiesData)
 	if err != nil {
 		v.log.Errorf("failed to create vault external secret, %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
