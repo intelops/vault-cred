@@ -123,15 +123,65 @@ func (k *K8SClient) CreateOrUpdateSecretStore(ctx context.Context, secretStoreNa
 	return
 }
 
+// func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSecretName, namespace,
+// 	secretStoreRefName, secretName, secretType string, vaultKeyPathdata map[string]string) (err error) {
+// 	secretKeysData := []ExternalSecretData{}
+// 	for key, path := range vaultKeyPathdata {
+// 		secretKeyData := ExternalSecretData{
+// 			SecretKey: key,
+// 			RemoteRef: ExternalSecretDataRemoteRef{
+// 				Key:      path,
+// 				Property: key,
+// 			},
+// 		}
+// 		secretKeysData = append(secretKeysData, secretKeyData)
+// 	}
+// 	externalSecret := ExternalSecret{
+// 		APIVersion: "external-secrets.io/v1beta1",
+// 		Kind:       "ExternalSecret",
+// 		Metadata: ObjectMeta{
+// 			Name:      externalSecretName,
+// 			Namespace: namespace,
+// 		},
+// 		Spec: ExternalSecretSpec{
+// 			RefreshInterval: "10s",
+// 			Target: ExternalSecretTarget{
+// 				Name:     secretName,
+// 				Template: ExternalSecretTargetTemplate{Type: secretType}},
+// 			SecretStoreRef: SecretStoreRef{
+// 				Name: secretStoreRefName,
+// 				Kind: "SecretStore",
+// 			},
+// 			Data: secretKeysData,
+// 		},
+// 	}
+
+// 	externalSecretData, err := yaml.Marshal(&externalSecret)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	_, _, err = k.DynamicClient.CreateResource(ctx, []byte(externalSecretData))
+// 	if err != nil {
+// 		err = fmt.Errorf("failed to create vault external secret %s/%s, %v", namespace, externalSecretName, err)
+// 		return
+// 	}
+// 	return
+// }
+
 func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSecretName, namespace,
-	secretStoreRefName, secretName, secretType string, vaultKeyPathdata map[string]string) (err error) {
+	secretStoreRefName, secretName, secretType string, vaultKeyPathdata, properties map[string]string) (err error) {
 	secretKeysData := []ExternalSecretData{}
 	for key, path := range vaultKeyPathdata {
+		property := properties[key]
+		if property == "" {
+			property = key // Default to key if property is not specified
+		}
 		secretKeyData := ExternalSecretData{
 			SecretKey: key,
 			RemoteRef: ExternalSecretDataRemoteRef{
 				Key:      path,
-				Property: key,
+				Property: property,
 			},
 		}
 		secretKeysData = append(secretKeysData, secretKeyData)
