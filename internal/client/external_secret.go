@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"gopkg.in/yaml.v2"
 )
@@ -177,6 +178,7 @@ func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSe
 		if property == "" {
 			property = key // Default to key if property is not specified
 		}
+		log.Println("Property", property)
 		secretKeyData := ExternalSecretData{
 			SecretKey: key,
 			RemoteRef: ExternalSecretDataRemoteRef{
@@ -185,6 +187,7 @@ func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSe
 			},
 		}
 		secretKeysData = append(secretKeysData, secretKeyData)
+		log.Println("secret keys data", secretKeysData)
 	}
 	externalSecret := ExternalSecret{
 		APIVersion: "external-secrets.io/v1beta1",
