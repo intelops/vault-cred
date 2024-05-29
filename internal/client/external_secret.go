@@ -292,8 +292,8 @@ func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSe
 				},
 			}
 			secretKeysData = append(secretKeysData, secretKeyData)
-			log.Println("Secret keys data", secretKeysData)
-			log.Println("property", property)
+
+			//	log.Println("property", property)
 		}
 	}
 	externalSecret := ExternalSecret{
@@ -315,7 +315,7 @@ func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSe
 			Data: secretKeysData,
 		},
 	}
-
+	log.Println("Secret keys data", secretKeysData)
 	externalSecretData, err := yaml.Marshal(&externalSecret)
 	if err != nil {
 		return
