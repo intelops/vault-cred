@@ -563,7 +563,7 @@ func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSe
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-
+	log.Println("Keys", keys)
 	for _, key := range keys {
 		paths := vaultKeyPathdata[key]
 

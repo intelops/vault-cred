@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 
 	//"log"
 
@@ -231,6 +232,8 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	}
 
 	externalSecretName := "ext-secret-" + request.SecretName
+	log.Println("Secret Paths Data", secretPathsData)
+	log.Println("Properties data", propertiesData)
 	err = k8sclient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName, request.SecretName, "", secretPathsData, propertiesData)
 	if err != nil {
 		v.log.Errorf("failed to create vault external secret, %v", err)
