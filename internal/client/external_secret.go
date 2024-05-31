@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sort"
+
+	//"sort"
 
 	"gopkg.in/yaml.v2"
 )
@@ -274,61 +275,61 @@ func (k *K8SClient) CreateOrUpdateSecretStore(ctx context.Context, secretStoreNa
 // 	return
 // }
 
-// func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSecretName, namespace,
-// 	secretStoreRefName, secretName, secretType string, vaultKeyPathdata, secretProperties map[string][]string) (err error) {
-// 	secretKeysData := []ExternalSecretData{}
-// 	for key, paths := range vaultKeyPathdata {
-// 		// Ensure that the length of paths and properties are the same
-// 		if len(paths) != len(secretProperties[key]) {
-// 			err = fmt.Errorf("length of paths and properties must be the same for key: %s", key)
-// 			return
-// 		}
-// 		for i, path := range paths {
-// 			property := secretProperties[key][i]
-// 			secretKeyData := ExternalSecretData{
-// 				SecretKey: key,
-// 				RemoteRef: ExternalSecretDataRemoteRef{
-// 					Key:      path,
-// 					Property: property,
-// 				},
-// 			}
-// 			secretKeysData = append(secretKeysData, secretKeyData)
+func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSecretName, namespace,
+	secretStoreRefName, secretName, secretType string, vaultKeyPathdata, secretProperties map[string][]string) (err error) {
+	secretKeysData := []ExternalSecretData{}
+	for key, paths := range vaultKeyPathdata {
+		// Ensure that the length of paths and properties are the same
+		if len(paths) != len(secretProperties[key]) {
+			err = fmt.Errorf("length of paths and properties must be the same for key: %s", key)
+			return
+		}
+		for i, path := range paths {
+			property := secretProperties[key][i]
+			secretKeyData := ExternalSecretData{
+				SecretKey: key,
+				RemoteRef: ExternalSecretDataRemoteRef{
+					Key:      path,
+					Property: property,
+				},
+			}
+			secretKeysData = append(secretKeysData, secretKeyData)
 
-// 			//	log.Println("property", property)
-// 		}
-// 	}
-// 	externalSecret := ExternalSecret{
-// 		APIVersion: "external-secrets.io/v1beta1",
-// 		Kind:       "ExternalSecret",
-// 		Metadata: ObjectMeta{
-// 			Name:      externalSecretName,
-// 			Namespace: namespace,
-// 		},
-// 		Spec: ExternalSecretSpec{
-// 			RefreshInterval: "10s",
-// 			Target: ExternalSecretTarget{
-// 				Name:     secretName,
-// 				Template: ExternalSecretTargetTemplate{Type: secretType}},
-// 			SecretStoreRef: SecretStoreRef{
-// 				Name: secretStoreRefName,
-// 				Kind: "SecretStore",
-// 			},
-// 			Data: secretKeysData,
-// 		},
-// 	}
-// 	log.Println("Secret keys data", secretKeysData)
-// 	externalSecretData, err := yaml.Marshal(&externalSecret)
-// 	if err != nil {
-// 		return
-// 	}
+			//	log.Println("property", property)
+		}
+	}
+	externalSecret := ExternalSecret{
+		APIVersion: "external-secrets.io/v1beta1",
+		Kind:       "ExternalSecret",
+		Metadata: ObjectMeta{
+			Name:      externalSecretName,
+			Namespace: namespace,
+		},
+		Spec: ExternalSecretSpec{
+			RefreshInterval: "10s",
+			Target: ExternalSecretTarget{
+				Name:     secretName,
+				Template: ExternalSecretTargetTemplate{Type: secretType}},
+			SecretStoreRef: SecretStoreRef{
+				Name: secretStoreRefName,
+				Kind: "SecretStore",
+			},
+			Data: secretKeysData,
+		},
+	}
+	log.Println("Secret keys data", secretKeysData)
+	externalSecretData, err := yaml.Marshal(&externalSecret)
+	if err != nil {
+		return
+	}
 
-// 	_, _, err = k.DynamicClient.CreateResource(ctx, []byte(externalSecretData))
-// 	if err != nil {
-// 		err = fmt.Errorf("failed to create vault external secret %s/%s, %v", namespace, externalSecretName, err)
-// 		return
-// 	}
-// 	return
-// }
+	_, _, err = k.DynamicClient.CreateResource(ctx, []byte(externalSecretData))
+	if err != nil {
+		err = fmt.Errorf("failed to create vault external secret %s/%s, %v", namespace, externalSecretName, err)
+		return
+	}
+	return
+}
 
 // func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSecretName, namespace,
 // 	secretStoreRefName, secretName, secretType string, vaultKeyPathdata, secretProperties map[string][]string) (err error) {
@@ -553,105 +554,3 @@ func (k *K8SClient) CreateOrUpdateSecretStore(ctx context.Context, secretStoreNa
 //		}
 //		return
 //	}
-func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSecretName, namespace,
-	secretStoreRefName, secretName, secretType string, vaultKeyPathdata, secretProperties map[string][]string) (err error) {
-	secretKeysData := []ExternalSecretData{}
-
-	// Extract and sort the keys from vaultKeyPathdata
-	keys := make([]string, 0, len(vaultKeyPathdata))
-	for key := range vaultKeyPathdata {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	log.Println("Keys", keys)
-	for _, key := range keys {
-		paths := vaultKeyPathdata[key]
-
-		// Ensure that secretProperties contains the key
-		properties, exists := secretProperties[key]
-		if !exists {
-			err = fmt.Errorf("secretProperties does not contain key: %s", key)
-			return
-		}
-
-		// Ensure that the length of paths and properties are the same
-		if len(paths) != len(properties) {
-			err = fmt.Errorf("length of paths and properties must be the same for key: %s", key)
-			return
-		}
-
-		// Sort paths and properties to ensure consistent order
-		sortedData := make([]struct {
-			Path, Property string
-		}, len(paths))
-
-		for i := range paths {
-			sortedData[i] = struct {
-				Path, Property string
-			}{
-				Path:     paths[i],
-				Property: properties[i],
-			}
-		}
-
-		// Sort the combined data
-		sort.Slice(sortedData, func(i, j int) bool {
-			if sortedData[i].Path != sortedData[j].Path {
-				return sortedData[i].Path < sortedData[j].Path
-			}
-			return sortedData[i].Property < sortedData[j].Property
-		})
-
-		// Append sorted data to secretKeysData
-		for _, data := range sortedData {
-			secretKeyData := ExternalSecretData{
-				SecretKey: key,
-				RemoteRef: ExternalSecretDataRemoteRef{
-					Key:      data.Path,
-					Property: data.Property,
-				},
-			}
-			secretKeysData = append(secretKeysData, secretKeyData)
-		}
-	}
-
-	// Sort the secretKeysData to ensure consistent order
-	sort.Slice(secretKeysData, func(i, j int) bool {
-		if secretKeysData[i].SecretKey != secretKeysData[j].SecretKey {
-			return secretKeysData[i].SecretKey < secretKeysData[j].SecretKey
-		}
-		return secretKeysData[i].RemoteRef.Property < secretKeysData[j].RemoteRef.Property
-	})
-
-	externalSecret := ExternalSecret{
-		APIVersion: "external-secrets.io/v1beta1",
-		Kind:       "ExternalSecret",
-		Metadata: ObjectMeta{
-			Name:      externalSecretName,
-			Namespace: namespace,
-		},
-		Spec: ExternalSecretSpec{
-			RefreshInterval: "10s",
-			Target: ExternalSecretTarget{
-				Name:     secretName,
-				Template: ExternalSecretTargetTemplate{Type: secretType}},
-			SecretStoreRef: SecretStoreRef{
-				Name: secretStoreRefName,
-				Kind: "SecretStore",
-			},
-			Data: secretKeysData,
-		},
-	}
-	log.Println("Secret keys data", secretKeysData)
-	externalSecretData, err := yaml.Marshal(&externalSecret)
-	if err != nil {
-		return
-	}
-
-	_, _, err = k.DynamicClient.CreateResource(ctx, []byte(externalSecretData))
-	if err != nil {
-		err = fmt.Errorf("failed to create vault external secret %s/%s, %v", namespace, externalSecretName, err)
-		return
-	}
-	return
-}
