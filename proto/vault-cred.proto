@@ -43,6 +43,7 @@ message PingResponse {
 message SecretPathRef {
   string SecretPath = 1;
   string SecretKey = 2;
+  string property = 3;
 }
 
 message ConfigureVaultSecretRequest {  
