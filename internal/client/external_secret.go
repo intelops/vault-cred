@@ -3,8 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-
-
+	"log"
 
 	"gopkg.in/yaml.v2"
 )
@@ -166,6 +165,7 @@ func (k *K8SClient) CreateOrUpdateExternalSecret(ctx context.Context, externalSe
 			Data: secretKeysData,
 		},
 	}
+	log.Println("Secret Keys Data", secretKeysData)
 	externalSecretData, err := yaml.Marshal(&externalSecret)
 	if err != nil {
 		return
