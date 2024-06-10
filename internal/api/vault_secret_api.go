@@ -74,7 +74,8 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
-	vaultAddressStr := fmt.Sprintf("http://%s", request.DomainName)
+	// vaultAddressStr := fmt.Sprintf("http://%s", request.DomainName)
+	vaultAddressStr := fmt.Sprintf(vaultAddress, request.DomainName)
 	log.Println("Vault Address string", vaultAddressStr)
 	secretStoreName := "ext-store-" + request.SecretName
 	err = k8sClient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
