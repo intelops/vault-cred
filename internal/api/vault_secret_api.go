@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"sort"
 
@@ -74,6 +75,7 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	}
 
 	vaultAddressStr := fmt.Sprintf("http://%s", request.DomainName)
+	log.Println("Vault Address string", vaultAddressStr)
 	secretStoreName := "ext-store-" + request.SecretName
 	err = k8sClient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
 	if err != nil {
