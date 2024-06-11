@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"sort"
 
@@ -111,6 +110,9 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		})
 	}
 
+	// Log initial secret path properties
+	v.log.Infof("Initial Secret Path Properties: %v", secretPathProperties)
+
 	// Sort the secretPathProperties slice by SecretKey, then by SecretPath, and then by Property
 	sort.SliceStable(secretPathProperties, func(i, j int) bool {
 		if secretPathProperties[i].SecretKey != secretPathProperties[j].SecretKey {
@@ -121,6 +123,9 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		}
 		return secretPathProperties[i].Property < secretPathProperties[j].Property
 	})
+
+	// Log sorted secret path properties
+	v.log.Infof("Sorted Secret Path Properties: %v", secretPathProperties)
 
 	// Initialize slices and maps to hold secret paths and properties
 	secretPaths := []string{}
@@ -138,19 +143,24 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		}
 	}
 
+	// Log secret paths data and properties data after sorting and population
+	v.log.Infof("Secret Paths Data after sorting and population: %v", secretPathsData)
+	v.log.Infof("Properties Data after sorting and population: %v", propertiesData)
+
 	// Generate an AppRole name using the secret name
 	appRoleName := "kad-" + request.SecretName
 
 	// Create an AppRole token using the secret paths
 	token, err := v.createAppRoleToken(context.Background(), appRoleName, secretPaths)
 	if err != nil {
+		v.log.Errorf("Error creating AppRole token: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
 	// Initialize a Kubernetes client
 	k8sClient, err := client.NewK8SClient(v.log)
 	if err != nil {
-		v.log.Errorf("failed to initialize k8s client, %v", err)
+		v.log.Errorf("Failed to initialize k8s client: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
@@ -163,13 +173,13 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	// Create or update the Kubernetes secret with the Vault token
 	err = k8sClient.CreateOrUpdateSecret(ctx, request.Namespace, vaultTokenSecretName, "Opaque", cred, nil)
 	if err != nil {
-		v.log.Errorf("failed to create cluster vault token secret, %v", err)
+		v.log.Errorf("Failed to create cluster vault token secret: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
 	// Format the Vault address string using the domain name from the request
 	vaultAddressStr := fmt.Sprintf(vaultAddress, request.DomainName)
-	log.Println("Vault Address string", vaultAddressStr)
+	v.log.Infof("Vault Address string: %s", vaultAddressStr)
 
 	// Generate a name for the SecretStore
 	secretStoreName := "ext-store-" + request.SecretName
@@ -177,7 +187,7 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	// Create or update the SecretStore in Kubernetes
 	err = k8sClient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
 	if err != nil {
-		v.log.Errorf("failed to create secret store, %v", err)
+		v.log.Errorf("Failed to create secret store: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
@@ -185,13 +195,13 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	externalSecretName := "ext-secret-" + request.SecretName
 
 	// Log the sorted secret paths and properties for debugging
-	v.log.Infof("Sorted Secret Paths Data: %v", secretPathsData)
-	v.log.Infof("Properties Data: %v", propertiesData)
+	v.log.Infof("Final Secret Paths Data: %v", secretPathsData)
+	v.log.Infof("Final Properties Data: %v", propertiesData)
 
 	// Create or update the ExternalSecret in Kubernetes using the sorted data
 	err = k8sClient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName, request.SecretName, "", secretPathsData, propertiesData)
 	if err != nil {
-		v.log.Errorf("failed to create vault external secret, %v", err)
+		v.log.Errorf("Failed to create vault external secret: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
