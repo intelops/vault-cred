@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"sort"
+	//	"sort"
 
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
@@ -34,15 +34,15 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		})
 	}
 
-	sort.SliceStable(secretPathProperties, func(i, j int) bool {
-		if secretPathProperties[i].SecretKey != secretPathProperties[j].SecretKey {
-			return secretPathProperties[i].SecretKey < secretPathProperties[j].SecretKey
-		}
-		if secretPathProperties[i].SecretPath != secretPathProperties[j].SecretPath {
-			return secretPathProperties[i].SecretPath < secretPathProperties[j].SecretPath
-		}
-		return secretPathProperties[i].Property < secretPathProperties[j].Property
-	})
+	// sort.SliceStable(secretPathProperties, func(i, j int) bool {
+	// 	if secretPathProperties[i].SecretKey != secretPathProperties[j].SecretKey {
+	// 		return secretPathProperties[i].SecretKey < secretPathProperties[j].SecretKey
+	// 	}
+	// 	if secretPathProperties[i].SecretPath != secretPathProperties[j].SecretPath {
+	// 		return secretPathProperties[i].SecretPath < secretPathProperties[j].SecretPath
+	// 	}
+	// 	return secretPathProperties[i].Property < secretPathProperties[j].Property
+	// })
 
 	secretPaths := []string{}
 	secretPathsData := map[string][]string{}
@@ -57,6 +57,8 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 			propertiesData[spp.SecretKey] = append(propertiesData[spp.SecretKey], spp.SecretKey)
 		}
 	}
+	v.log.Info("Properties Data", propertiesData)
+	v.log.Infof("Secret Paths Data: %v", secretPathsData)
 
 	appRoleName := "kad-" + request.SecretName
 
@@ -93,8 +95,6 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 	}
 
 	externalSecretName := "ext-secret-" + request.SecretName
-
-	v.log.Infof("Secret Paths Data: %v", secretPathsData)
 
 	err = k8sClient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName, request.SecretName, "", secretPathsData, propertiesData)
 	if err != nil {
