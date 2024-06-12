@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	//	"sort"
+	"sort"
 
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
@@ -24,13 +24,9 @@ type SecretPathProperty struct {
 func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vaultcredpb.ConfigureVaultSecretRequest) (*vaultcredpb.ConfigureVaultSecretResponse, error) {
 	v.log.Infof("Configure Vault Secret Request received for secret %s", request.SecretName)
 
-	// Copy the request.SecretPathData to an immutable slice
-	immutableSecretPathData := make([]*vaultcredpb.SecretPathRef, len(request.SecretPathData))
-	copy(immutableSecretPathData, request.SecretPathData)
-
 	secretPathProperties := []SecretPathProperty{}
 
-	for _, secretPathData := range immutableSecretPathData {
+	for _, secretPathData := range request.SecretPathData {
 		secretPathProperties = append(secretPathProperties, SecretPathProperty{
 			SecretKey:  secretPathData.SecretKey,
 			SecretPath: secretPathData.SecretPath,
@@ -38,9 +34,21 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 		})
 	}
 
+	sort.SliceStable(secretPathProperties, func(i, j int) bool {
+		if secretPathProperties[i].SecretKey != secretPathProperties[j].SecretKey {
+			return secretPathProperties[i].SecretKey < secretPathProperties[j].SecretKey
+		}
+		if secretPathProperties[i].SecretPath != secretPathProperties[j].SecretPath {
+			return secretPathProperties[i].SecretPath < secretPathProperties[j].SecretPath
+		}
+		return secretPathProperties[i].Property < secretPathProperties[j].Property
+	})
+
 	secretPaths := []string{}
 	secretPathsData := map[string][]string{}
 	propertiesData := map[string][]string{}
+
+	v.log.Info("Secret Path Properties", secretPathProperties)
 
 	for _, spp := range secretPathProperties {
 		secretPathsData[spp.SecretKey] = append(secretPathsData[spp.SecretKey], spp.SecretPath)
@@ -51,7 +59,7 @@ func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vault
 			propertiesData[spp.SecretKey] = append(propertiesData[spp.SecretKey], spp.SecretKey)
 		}
 	}
-	v.log.Infof("Properties Data: %v", propertiesData)
+	v.log.Info("Properties Data", propertiesData)
 	v.log.Infof("Secret Paths Data: %v", secretPathsData)
 
 	appRoleName := "kad-" + request.SecretName
