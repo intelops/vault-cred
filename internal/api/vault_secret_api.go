@@ -3,12 +3,12 @@ package api
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"sort"
 
 	"github.com/intelops/vault-cred/internal/client"
 	"github.com/intelops/vault-cred/proto/pb/vaultcredpb"
-	v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -16,66 +16,96 @@ var (
 	vaultAddress     = "http://vault.%s"
 )
 
+type SecretPathProperty struct {
+	SecretKey  string
+	SecretPath string
+	Property   string
+}
+
 func (v *VaultCredServ) ConfigureVaultSecret(ctx context.Context, request *vaultcredpb.ConfigureVaultSecretRequest) (*vaultcredpb.ConfigureVaultSecretResponse, error) {
 	v.log.Infof("Configure Vault Secret Request received for secret %s", request.SecretName)
 
+	var secretPathProperties []SecretPathProperty
+
+	for _, secretPathData := range request.SecretPathData {
+		secretPathProperties = append(secretPathProperties, SecretPathProperty{
+			SecretKey:  secretPathData.SecretKey,
+			SecretPath: secretPathData.SecretPath,
+			Property:   secretPathData.Property,
+		})
+	}
+
+	sort.SliceStable(secretPathProperties, func(i, j int) bool {
+		if secretPathProperties[i].SecretKey != secretPathProperties[j].SecretKey {
+			return secretPathProperties[i].SecretKey < secretPathProperties[j].SecretKey
+		}
+		if secretPathProperties[i].SecretPath != secretPathProperties[j].SecretPath {
+			return secretPathProperties[i].SecretPath < secretPathProperties[j].SecretPath
+		}
+		return secretPathProperties[i].Property < secretPathProperties[j].Property
+	})
+
+	secretPaths := []string{}
 	secretPathsData := map[string][]string{}
 	propertiesData := map[string][]string{}
-	secretPaths := []string{}
 
-	// Populate the secretPathsData and propertiesData maps
-	for _, secretPathData := range request.SecretPathData {
-		secretPathsData[secretPathData.SecretKey] = append(secretPathsData[secretPathData.SecretKey], secretPathData.SecretPath)
-		secretPaths = append(secretPaths, secretPathData.SecretPath)
-		if secretPathData.Property != "" {
-			propertiesData[secretPathData.SecretKey] = append(propertiesData[secretPathData.SecretKey], secretPathData.Property)
+	var mu sync.Mutex
+	mu.Lock()
+
+	for _, spp := range secretPathProperties {
+		secretPathsData[spp.SecretKey] = append(secretPathsData[spp.SecretKey], spp.SecretPath)
+		secretPaths = append(secretPaths, spp.SecretPath)
+		if spp.Property != "" {
+			propertiesData[spp.SecretKey] = append(propertiesData[spp.SecretKey], spp.Property)
 		} else {
-			propertiesData[secretPathData.SecretKey] = append(propertiesData[secretPathData.SecretKey], secretPathData.SecretKey)
+			propertiesData[spp.SecretKey] = append(propertiesData[spp.SecretKey], spp.SecretKey)
 		}
 	}
 
-	// Sort the paths and properties to ensure consistent ordering
-	for key := range secretPathsData {
-		sort.Strings(secretPathsData[key])
-		sort.Strings(propertiesData[key])
-	}
+	mu.Unlock()
 
-	// Log the sorted maps for debugging purposes
-	v.log.Debug("Sorted Secret Paths Data", secretPathsData)
-	v.log.Debug("Sorted Properties Data", propertiesData)
+	v.log.Infof("Secret Paths Data after sorting and population: %v", secretPathsData)
 
-	appRoleName := kadAppRolePrefix + request.SecretName
+	appRoleName := "kad-" + request.SecretName
+
 	token, err := v.createAppRoleToken(context.Background(), appRoleName, secretPaths)
 	if err != nil {
+		v.log.Errorf("Error creating AppRole token: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
-	k8sclient, err := client.NewK8SClient(v.log)
+	k8sClient, err := client.NewK8SClient(v.log)
 	if err != nil {
-		v.log.Errorf("failed to initialize k8s client, %v", err)
+		v.log.Errorf("Failed to initialize k8s client: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
 	cred := map[string][]byte{"token": []byte(token)}
+
 	vaultTokenSecretName := "vault-token-" + request.SecretName
-	err = k8sclient.CreateOrUpdateSecret(ctx, request.Namespace, vaultTokenSecretName, v1.SecretTypeOpaque, cred, nil)
+
+	err = k8sClient.CreateOrUpdateSecret(ctx, request.Namespace, vaultTokenSecretName, "Opaque", cred, nil)
 	if err != nil {
-		v.log.Errorf("failed to create cluster vault token secret, %v", err)
+		v.log.Errorf("Failed to create cluster vault token secret: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
 	vaultAddressStr := fmt.Sprintf(vaultAddress, request.DomainName)
+	v.log.Infof("Vault Address string: %s", vaultAddressStr)
+
 	secretStoreName := "ext-store-" + request.SecretName
-	err = k8sclient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
+
+	err = k8sClient.CreateOrUpdateSecretStore(ctx, secretStoreName, request.Namespace, vaultAddressStr, vaultTokenSecretName, "token")
 	if err != nil {
-		v.log.Errorf("failed to create secret store, %v", err)
+		v.log.Errorf("Failed to create secret store: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
 	externalSecretName := "ext-secret-" + request.SecretName
-	err = k8sclient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName, request.SecretName, "", secretPathsData, propertiesData)
+
+	err = k8sClient.CreateOrUpdateExternalSecret(ctx, externalSecretName, request.Namespace, secretStoreName, request.SecretName, "", secretPathsData, propertiesData)
 	if err != nil {
-		v.log.Errorf("failed to create vault external secret, %v", err)
+		v.log.Errorf("Failed to create vault external secret: %v", err)
 		return &vaultcredpb.ConfigureVaultSecretResponse{Status: vaultcredpb.StatusCode_INTERNRAL_ERROR}, err
 	}
 
