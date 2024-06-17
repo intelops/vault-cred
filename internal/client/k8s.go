@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/intelops/go-common/logging"
 	"github.com/pkg/errors"
@@ -144,4 +145,10 @@ func (k *K8SClient) GetConfigMapsHasPrefix(ctx context.Context, prefix string) (
 		}
 	}
 	return allConfigMapData, nil
+}
+func (k *K8SClient) DeleteKubernetesSecret(ctx context.Context, secretName, namespace string) error {
+ 
+    return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+        return k.client.CoreV1().Secrets(namespace).Delete(ctx, secretName, metav1.DeleteOptions{})
+    })
 }
